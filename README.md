@@ -17,23 +17,33 @@ ea-fc-platform/
 ├── backend/
 │   ├── config/                    # Configuración Django
 │   │   ├── settings/
-│   │   │   ├── base.py            # Configuración base
-│   │   │   ├── development.py     # Entorno de desarrollo
-│   │   │   └── production.py      # Entorno de producción
-│   │   ├── urls.py                # URLs principales
+│   │   │   ├── base.py
+│   │   │   ├── development.py
+│   │   │   └── production.py
+│   │   ├── urls.py
 │   │   └── wsgi.py
 │   ├── apps/
-│   │   ├── accounts/              # Users, roles, permisos
+│   │   ├── accounts/              # Users, roles, permisos, JWT auth
 │   │   ├── competitions/          # Countries, Games, Leagues, Seasons, Divisions
 │   │   ├── clubs/                 # Clubs, ClubSeason, ClubTitle
 │   │   ├── players/               # Players, historial de identidad y clubes
 │   │   ├── matches/               # Matchdays, Matches, MatchPlayers, MatchEvents
-│   │   ├── standings/             # Standings (derivado), services, zones
+│   │   ├── standings/             # Standing (derivado), services, zones
 │   │   └── statistics/            # Estadísticas derivadas de MatchEvents
-│   ├── management/commands/       # Commands obsoletos (verificados)
+│   ├── test_helpers/              # Base de tests reutilizable
 │   ├── manage.py
-│   └── .env
-├── frontend/                      # React + TypeScript + Vite (por implementar)
+│   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   │   ├── api/                   # Axios client + endpoints
+│   │   ├── components/            # Layout, UI components
+│   │   ├── context/               # AuthContext (JWT)
+│   │   ├── pages/                 # Todas las páginas
+│   │   ├── types/                 # TypeScript interfaces
+│   │   ├── App.tsx
+│   │   └── App.css                # Dark theme sports UI
+│   ├── vite.config.ts
+│   └── package.json
 ├── .gitignore
 ├── .env.example
 └── README.md
@@ -43,41 +53,61 @@ ea-fc-platform/
 
 ### Fase 1 — Arquitectura y modelos
 
-Se creó la estructura completa del proyecto backend con Django y PostgreSQL:
-
 - **Configuración modular de settings** (base, development, production)
-- **6 apps de Django** con sus modelos:
-  - `accounts`: User (con roles), LeagueAdmin, ClubAdmin
-  - `competitions`: Country, Game, CompetitionFormat, League, Season, Division
-  - `clubs`: Club, ClubSeason, ClubTitle
-  - `players`: Player, PlayerIdentityHistory, PlayerClubHistory
-  - `matches`: Matchday, Match, MatchPlayer, MatchEvent
-  - `standings`: Standing
-- **Django Admin** configurado para todos los modelos (21 modelos registrados)
+- **7 apps de Django** con sus modelos (21 modelos)
+- **Django Admin** configurado para todos los modelos
 - **Migraciones** creadas y aplicadas
+- **Base de datos PostgreSQL** `ea_fc_platform` creada
 
 ### Fase 2 — Lógica de negocio
 
-Se implementaron los services y management commands:
-
-- **Standings service** (`apps/standings/services.py`): Recálculo de posiciones a partir de resultados de partidos
-- **Statistics service** (`apps/statistics/services.py`): Cálculo de estadísticas de jugadores y clubes desde MatchEvents
-- **Zones service** (`apps/standings/zones.py`): Determinación de zonas competitivas (CAMPEÓN, REDUCIDO, PROMOCIÓN, DESCENSO)
-- **Match validation service** (`apps/matches/services.py`): Validación de alineaciones, BOT, integridad
-- **Management commands**:
-  - `recalculate_standings`: Recalcula posiciones para una temporada/división o todas las activas
-  - `generate_fixtures`: Genera fixtures automáticamente (round robin, double round robin)
-  - `seed_data`: Crea datos de prueba completos
+- **Standings service**: Recálculo de posiciones desde resultados de partidos
+- **Statistics service**: Cálculo de estadísticas on-demand desde MatchEvents
+- **Zones service**: Determinación de zonas competitivas (CAMPEÓN, REDUCIDO, PROMOCIÓN, DESCENSO)
+- **Match validation**: Validación de alineaciones, BOT, integridad de goles
+- **Management commands**: `recalculate_standings`, `generate_fixtures`, `seed_data`
+- **Seed data**: 4 users, 20 clubs, 31 players, 121 partidos, 665 eventos, 40 standings
 
 ### Fase 3 — API REST
 
-Se implementó la API REST completa con Django REST Framework:
-
 - **Serializers** para todos los modelos (list, detail, create/update)
-- **ViewSets** con CRUD completo
-- **Endpoints de autenticación**: login, register, profile, token refresh
-- **Endpoints públicos**: standings, statistics, top scorers, assists, MVP
-- **Endpoints administrativos**: recalculate standings
+- **ViewSets** con CRUD completo para las 7 apps
+- **Auth endpoints**: login, register, profile, token refresh
+- **Statistics endpoints**: top scorers, assists, MVP, player stats
+- **Standings recalculate endpoint**
+
+### Fase 4 — Frontend React
+
+- **API client** con Axios + JWT interceptors (auto-refresh)
+- **TypeScript types** para todos los modelos
+- **AuthContext** con login/logout/profile
+- **Layout** con Header, navegación, Footer
+- **UI Components**: StandingsTable (colores de zona), MatchCard, PlayerCard, ClubCard
+- **12 páginas**: Home, Countries, Leagues, Seasons, Standings, Clubs, ClubProfile, Players, PlayerProfile, Matches, Statistics, Login
+- **Dark theme** con estilos deportivos
+- **Build** pasa sin errores
+
+### Fase 5 — Autenticación y Permisos
+
+- **7 clases de permisos**: IsSuperAdmin, IsAdminLiga, IsAdminClub, IsAdminOrPlayer, IsOwnerOrAdmin, CanManageLeague, CanManageClub
+- **Permisos por ViewSet**: lectura pública, escritura según rol
+- **Nickname change**: solo SUPERADMIN puede cambiar nicknames
+- **Token refresh automático** en el frontend
+
+### Fase 6 — Tests
+
+- **74 tests**, todos pasando
+- **6 archivos de tests**:
+  - `apps/players/tests.py` (9 tests): creación, nickname único, historial
+  - `apps/clubs/tests.py` (8 tests): clubs, club-season, títulos
+  - `apps/matches/tests.py` (10 tests): partidos, alineaciones, BOT, eventos
+  - `apps/standings/tests.py` (10 tests): recálculo de posiciones, zonas
+  - `apps/statistics/tests.py` (8 tests): estadísticas derivadas, rankings
+  - `apps/accounts/tests.py` (29 tests): auth, permisos por rol en todos los endpoints
+
+```bash
+python manage.py test apps.accounts.tests apps.players.tests apps.clubs.tests apps.matches.tests apps.standings.tests apps.statistics.tests -v 2
+```
 
 ---
 
@@ -118,24 +148,33 @@ Country → League → Season → Division → ClubSeason → Match → MatchPla
 
 ### Datos derivados vs fuente de verdad
 
-**Fuente de verdad:**
-- Player, Club, Season, Match, MatchPlayer, MatchEvent
+**Fuente de verdad:** Player, Club, Season, Match, MatchPlayer, MatchEvent
 
-**Datos derivados:**
-- Standing (se recalcula desde Matches)
-- Estadísticas (se calculan desde MatchEvent)
+**Datos derivados:** Standing (se recalcula desde Matches), Estadísticas (se calculan desde MatchEvent)
 
 ---
 
 ## Roles y permisos
 
-| Rol | Descripción |
-|-----|-------------|
-| `SUPERADMIN` | Acceso total al sistema |
-| `ADMIN_LIGA` | Gestiona competiciones asignadas |
-| `ADMIN_CLUB` | Gestiona su club y plantilla |
-| `PLAYER` | Consulta información, gestiona su perfil |
-| `USER` | Consulta información pública |
+| Rol | Lectura | Escritura |
+|-----|---------|-----------|
+| `SUPERADMIN` | Todo | Todo |
+| `ADMIN_LIGA` | Todo | Ligas asignadas, partidos, standings |
+| `ADMIN_CLUB` | Todo | Su club |
+| `PLAYER` | Todo | Solo su perfil (lectura) |
+| `USER` | Todo | Ninguno |
+
+### Permisos por recurso
+
+| Recurso | Lectura | Escritura |
+|---------|---------|-----------|
+| Countries, Games, Formats | Público | SUPERADMIN |
+| Leagues, Seasons, Divisions | Público | ADMIN_LIGA |
+| Clubs | Público | CanManageClub |
+| Players | Público | Solo nickname: SUPERADMIN |
+| Matches, Events | Público | ADMIN_LIGA |
+| Standings | Público | Recalculate: ADMIN_LIGA |
+| Statistics | Público | — |
 
 ---
 
@@ -144,24 +183,13 @@ Country → League → Season → Division → ClubSeason → Match → MatchPla
 ### Autenticación
 
 ```bash
-# Login
-POST /api/auth/login/
-{"username": "admin", "password": "admin123"}
-
-# Register
-POST /api/auth/register/
-{"username": "newuser", "email": "user@test.com", "password": "pass1234", "role": "USER"}
-
-# Profile
-GET /api/auth/profile/
-Authorization: Bearer <token>
-
-# Refresh token
-POST /api/token/refresh/
-{"refresh": "<refresh_token>"}
+POST /api/auth/login/          # Login → {access, refresh}
+POST /api/auth/register/       # Registro
+GET  /api/auth/profile/        # Perfil del usuario autenticado
+POST /api/token/refresh/       # Refresh token
 ```
 
-### Endpoints públicos (no requieren autenticación)
+### Endpoints públicos
 
 ```bash
 GET /api/countries/
@@ -180,19 +208,14 @@ GET /api/statistics/player/?player_id=1
 GET /api/statistics/player_history/?player_id=1
 ```
 
-### Endpoints administrativos (requieren autenticación)
+### Endpoints administrativos
 
 ```bash
-# CRUD completo
 GET/POST/PUT/PATCH/DELETE /api/clubs/
 GET/POST/PUT/PATCH/DELETE /api/players/
 GET/POST/PUT/PATCH/DELETE /api/matches/
 GET/POST/PUT/PATCH/DELETE /api/match-events/
-# ... etc
-
-# Recalcular standings
-POST /api/standings/recalculate/
-{"season_id": 1, "division_id": 1}
+POST /api/standings/recalculate/   {"season_id": 1, "division_id": 1}
 ```
 
 ---
@@ -200,50 +223,29 @@ POST /api/standings/recalculate/
 ## Commands de gestión
 
 ```bash
-# Recalcular posiciones
 python manage.py recalculate_standings --season 1 --division 1
 python manage.py recalculate_standings --all
-
-# Generar fixtures
 python manage.py generate_fixtures --season 1 --division 1
-python manage.py generate_fixtures --season 1 --division 1 --dry-run
-
-# Crear datos de prueba
 python manage.py seed_data
 ```
 
 ---
 
-## Configuración
-
-### Variables de entorno (.env)
-
-```bash
-SECRET_KEY=tu-clave-secreta
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-
-DB_NAME=ea_fc_platform
-DB_USER=postgres
-DB_PASSWORD=tu-password
-DB_HOST=localhost
-DB_PORT=5432
-
-CORS_ALLOWED_ORIGINS=http://localhost:5173
-```
-
-### Instalación
+## Instalación
 
 ```bash
 # Backend
 cd backend
-pip install -r requirements.txt  # o instalar manualmente
+pip install -r requirements.txt
 python manage.py migrate
-python manage.py seed_data  # datos de prueba
+python manage.py seed_data
 python manage.py createsuperuser
 python manage.py runserver
 
-# Frontend (por implementar)
+# Tests
+python manage.py test apps.accounts.tests apps.players.tests apps.clubs.tests apps.matches.tests apps.standings.tests apps.statistics.tests -v 2
+
+# Frontend
 cd frontend
 npm install
 npm run dev

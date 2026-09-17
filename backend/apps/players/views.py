@@ -4,11 +4,18 @@ from .serializers import (
     PlayerSerializer, PlayerDetailSerializer,
     PlayerIdentityHistorySerializer, PlayerClubHistorySerializer,
 )
+from apps.accounts.permissions import IsSuperAdmin, IsAdminLiga, IsAdminClub, IsOwnerOrAdmin
 
 
 class PlayerViewSet(viewsets.ModelViewSet):
     queryset = Player.objects.select_related("country").all()
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [permissions.AllowAny()]
+        if self.action in ["update", "partial_update"]:
+            return [IsSuperAdmin()]
+        return [IsSuperAdmin()]
 
     def get_serializer_class(self):
         if self.action == "retrieve":
@@ -19,7 +26,14 @@ class PlayerViewSet(viewsets.ModelViewSet):
 class PlayerIdentityHistoryViewSet(viewsets.ModelViewSet):
     queryset = PlayerIdentityHistory.objects.select_related("player", "changed_by").all()
     serializer_class = PlayerIdentityHistorySerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [permissions.AllowAny()]
+        return [IsSuperAdmin()]
+
+    def perform_create(self, serializer):
+        serializer.save(changed_by=self.request.user)
 
 
 class PlayerClubHistoryViewSet(viewsets.ModelViewSet):
@@ -27,4 +41,8 @@ class PlayerClubHistoryViewSet(viewsets.ModelViewSet):
         "player", "club_season__club", "club_season__season", "club_season__division"
     ).all()
     serializer_class = PlayerClubHistorySerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [permissions.AllowAny()]
+        return [IsSuperAdmin()]

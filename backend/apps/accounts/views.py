@@ -9,6 +9,7 @@ from .serializers import (
     UserSerializer, UserCreateSerializer, LoginSerializer,
     LeagueAdminSerializer, ClubAdminSerializer,
 )
+from .permissions import IsSuperAdmin, IsAdminLiga, IsAdminClub
 
 User = get_user_model()
 
@@ -62,21 +63,28 @@ class AuthViewSet(viewsets.GenericViewSet):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
             return [permissions.IsAuthenticated()]
-        return [permissions.IsAdminUser()]
+        return [IsSuperAdmin()]
 
 
 class LeagueAdminViewSet(viewsets.ModelViewSet):
     queryset = LeagueAdmin.objects.select_related("user", "league").all()
     serializer_class = LeagueAdminSerializer
-    permission_classes = [permissions.IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [permissions.IsAuthenticated()]
+        return [IsSuperAdmin()]
 
 
 class ClubAdminViewSet(viewsets.ModelViewSet):
     queryset = ClubAdmin.objects.select_related("user", "club").all()
     serializer_class = ClubAdminSerializer
-    permission_classes = [permissions.IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [permissions.IsAuthenticated()]
+        return [IsSuperAdmin()]

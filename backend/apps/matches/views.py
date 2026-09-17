@@ -4,12 +4,17 @@ from .serializers import (
     MatchdaySerializer, MatchSerializer, MatchDetailSerializer,
     MatchPlayerSerializer, MatchEventSerializer,
 )
+from apps.accounts.permissions import IsSuperAdmin, IsAdminLiga, CanManageLeague
 
 
 class MatchdayViewSet(viewsets.ModelViewSet):
     queryset = Matchday.objects.select_related("season", "division").all()
     serializer_class = MatchdaySerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [permissions.AllowAny()]
+        return [IsAdminLiga()]
 
 
 class MatchViewSet(viewsets.ModelViewSet):
@@ -17,7 +22,11 @@ class MatchViewSet(viewsets.ModelViewSet):
         "season", "division", "matchday",
         "home_club_season__club", "away_club_season__club",
     ).all()
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [permissions.AllowAny()]
+        return [IsAdminLiga()]
 
     def get_serializer_class(self):
         if self.action == "retrieve":
@@ -30,7 +39,11 @@ class MatchPlayerViewSet(viewsets.ModelViewSet):
         "match", "player", "club_season__club"
     ).all()
     serializer_class = MatchPlayerSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [permissions.AllowAny()]
+        return [IsAdminLiga()]
 
 
 class MatchEventViewSet(viewsets.ModelViewSet):
@@ -38,4 +51,8 @@ class MatchEventViewSet(viewsets.ModelViewSet):
         "match", "match_player__player", "match_player__club_season__club"
     ).all()
     serializer_class = MatchEventSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [permissions.AllowAny()]
+        return [IsAdminLiga()]

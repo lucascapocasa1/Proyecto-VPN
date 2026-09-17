@@ -6,6 +6,7 @@ from .models import Standing
 from .serializers import StandingSerializer
 from .services import recalculate_standings, recalculate_all_standings
 from apps.competitions.models import Season
+from apps.accounts.permissions import IsSuperAdmin, IsAdminLiga
 
 
 class StandingViewSet(viewsets.ModelViewSet):
@@ -13,9 +14,15 @@ class StandingViewSet(viewsets.ModelViewSet):
         "season", "division", "club_season__club"
     ).all()
     serializer_class = StandingSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    @action(detail=False, methods=["post"], permission_classes=[permissions.IsAdminUser])
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [permissions.AllowAny()]
+        if self.action == "recalculate":
+            return [IsAdminLiga()]
+        return [IsSuperAdmin()]
+
+    @action(detail=False, methods=["post"])
     def recalculate(self, request):
         season_id = request.data.get("season_id")
         division_id = request.data.get("division_id")
