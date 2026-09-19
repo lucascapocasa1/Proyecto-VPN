@@ -35,8 +35,8 @@ Plataforma web para gestionar ligas competitivas de **EA Sports FC — Clubes Pr
 | 4. Frontend React | ✅ | 12 páginas, dark theme, JWT auth, API client |
 | 5. Auth y Permisos | ✅ | 7 clases de permisos, role-based en todos los ViewSets |
 | 6. Tests | ✅ | 74 tests pasando en 6 archivos |
-| **7. Frontend-Backend Integration** | ⏳ | **PRÓXIMA — No iniciar sin autorización** |
-| 8. Optimization | ⏳ | Pendiente |
+| 7. Frontend-Backend Integration | ✅ | CRUD, loading, error handling, role-based UI |
+| **8. Optimization** | ⏳ | **PRÓXIMA — No iniciar sin autorización** |
 | 9. Deployment | ⏳ | Pendiente |
 | 10. Documentation | ⏳ | Pendiente |
 
@@ -150,37 +150,65 @@ frontend/
 ├── src/
 │   ├── api/
 │   │   ├── client.ts          # Axios + JWT interceptors (auto-refresh)
-│   │   └── index.ts           # API functions para todos los endpoints
+│   │   └── index.ts           # API functions CRUD para todos los endpoints
 │   ├── components/
-│   │   ├── layout/Layout.tsx   # Header, Nav, Footer
+│   │   ├── layout/Layout.tsx   # Header (con role badge), Nav, Footer
 │   │   └── ui/
-│   │       ├── StandingsTable.tsx  # Tabla con colores de zona
+│   │       ├── StandingsTable.tsx  # Tabla con colores de zona (CAMPEÓN/REDUCIDO/etc)
 │   │       ├── MatchCard.tsx
 │   │       ├── PlayerCard.tsx
-│   │       └── ClubCard.tsx
+│   │       ├── ClubCard.tsx
+│   │       ├── Loading.tsx         # Spinner animado
+│   │       └── ErrorMessage.tsx    # Error con retry button
 │   ├── context/
 │   │   └── AuthContext.tsx     # JWT auth (login, logout, profile)
 │   ├── pages/
-│   │   ├── Home.tsx
-│   │   ├── Countries.tsx
-│   │   ├── Leagues.tsx
-│   │   ├── Seasons.tsx
-│   │   ├── Standings.tsx
-│   │   ├── Clubs.tsx
-│   │   ├── ClubProfile.tsx
-│   │   ├── Players.tsx
-│   │   ├── PlayerProfile.tsx
-│   │   ├── Matches.tsx
-│   │   ├── Statistics.tsx
-│   │   └── Login.tsx
+│   │   ├── Home.tsx            # Seasons + clubs + top scorers
+│   │   ├── Countries.tsx       # Lista países
+│   │   ├── Leagues.tsx         # Lista ligas
+│   │   ├── Seasons.tsx         # Lista temporadas con badges de estado
+│   │   ├── Standings.tsx       # Tabla posiciones + recalculate button
+│   │   ├── Clubs.tsx           # Lista clubs + crear (SUPERADMIN)
+│   │   ├── ClubProfile.tsx     # Detalle club + títulos + participaciones
+│   │   ├── Players.tsx         # Lista jugadores + crear (SUPERADMIN)
+│   │   ├── PlayerProfile.tsx   # Detalle jugador + stats + historial
+│   │   ├── Matches.tsx         # Lista partidos + filtro por estado
+│   │   ├── Statistics.tsx      # Tabs goleadores/asistencias/MVP
+│   │   └── Login.tsx           # Login JWT
 │   ├── types/index.ts         # TypeScript interfaces
 │   ├── App.tsx                 # React Router
-│   ├── App.css                 # Dark theme sports UI
+│   ├── App.css                 # Dark theme + spinner + forms + filters
 │   └── main.tsx
 ├── vite.config.ts             # Proxy a localhost:8000
 ├── package.json
 └── tsconfig.json
 ```
+
+### API Client — Métodos disponibles
+
+```ts
+// CRUD completo
+authApi:          login, register, profile
+countriesApi:     list, get, create, update, delete
+leaguesApi:       list, get, create, update, delete
+seasonsApi:       list, get, create
+clubsApi:         list, get, create, update, delete
+playersApi:       list, get, create, update, delete
+matchesApi:       list, get, create, update, delete
+matchPlayersApi:  create, delete
+matchEventsApi:   create, delete
+standingsApi:     list, recalculate
+statisticsApi:    player, playerHistory, topScorers, topAssists, topMvp
+```
+
+### Role-based UI
+
+| Acción | Permisos |
+|--------|----------|
+| Crear club | SUPERADMIN |
+| Crear jugador | SUPERADMIN |
+| Recalcular tabla | SUPERADMIN, ADMIN_LIGA |
+| Ver todo | Todos los roles autenticados |
 
 ### Vite proxy
 ```ts
@@ -243,37 +271,35 @@ Seed data disponible via `python manage.py seed_data`:
 | `backend/apps/statistics/services.py` | Player/club statistics, top scorers/assists/mvp |
 | `backend/apps/matches/services.py` | Lineup validation, BOT completion, goal consistency |
 | `frontend/src/api/client.ts` | Axios + JWT interceptors |
+| `frontend/src/api/index.ts` | API CRUD functions para todos los endpoints |
 | `frontend/src/context/AuthContext.tsx` | Auth context con JWT |
+| `frontend/src/components/ui/Loading.tsx` | Spinner animado |
+| `frontend/src/components/ui/ErrorMessage.tsx` | Error con retry button |
 | `frontend/vite.config.ts` | Vite config con proxy |
 
 ---
 
-## Pendiente (Fase 7+)
-
-### Fase 7 — Frontend-Backend Integration
-- Conectar páginas del frontend con la API real
-- manejo de errores en UI
-- Loading states
-- Formularios CRUD funcionales
-- Navegación condicional según rol
+## Pendiente (Fase 8+)
 
 ### Fase 8 — Optimization
-- Paginación
-- Búsqueda/filtros
-- Cache de estadísticas
-- Optimización de queries
+- Paginación DRF en todos los ViewSets
+- Búsqueda y filtros (django-filter)
+- select_related / prefetch_related para evitar N+1
+- Cache de estadísticas (Redis o cache simple)
+- Compresión de respuesta
 
 ### Fase 9 — Deployment
 - Docker/docker-compose
 - Variables de entorno
 - HTTPS, CORS production
 - Static files
+- Health checks
 
 ### Fase 10 — Documentation
-- API docs (DRF Spectacular o similar)
+- API docs (DRF Spectacular / Swagger)
 - User guide
 - Developer guide
 
 ---
 
-*Última actualización: Fase 6 completada, commit 7ab3e69*
+*Última actualización: Fase 7 completada*

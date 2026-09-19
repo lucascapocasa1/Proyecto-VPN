@@ -82,9 +82,9 @@ ea-fc-platform/
 - **TypeScript types** para todos los modelos
 - **AuthContext** con login/logout/profile
 - **Layout** con Header, navegación, Footer
-- **UI Components**: StandingsTable (colores de zona), MatchCard, PlayerCard, ClubCard
+- **UI Components**: StandingsTable (colores de zona), MatchCard, PlayerCard, ClubCard, Loading, ErrorMessage
 - **12 páginas**: Home, Countries, Leagues, Seasons, Standings, Clubs, ClubProfile, Players, PlayerProfile, Matches, Statistics, Login
-- **Dark theme** con estilos deportivos
+- **Dark theme** con estilos deportivos, spinner animado, forms inline, filters
 - **Build** pasa sin errores
 
 ### Fase 5 — Autenticación y Permisos
@@ -108,6 +108,27 @@ ea-fc-platform/
 ```bash
 python manage.py test apps.accounts.tests apps.players.tests apps.clubs.tests apps.matches.tests apps.standings.tests apps.statistics.tests -v 2
 ```
+
+### Fase 7 — Frontend-Backend Integration
+
+- **API client CRUD**: métodos create, update, delete para todos los recursos
+- **Loading states**: componente `Loading` con spinner animado
+- **Error handling**: componente `ErrorMessage` con retry button
+- **Páginas conectadas con API real**:
+  - **Home**: carga seasons, clubs, top scorers desde API
+  - **Standings**: tabla de posiciones + botón "Recalcular Tabla" (solo ADMIN_LIGA+)
+  - **Clubs**: lista + formulario crear club (solo SUPERADMIN)
+  - **ClubProfile**: detalle con títulos y participaciones
+  - **Players**: lista + formulario crear jugador (solo SUPERADMIN)
+  - **PlayerProfile**: detalle con stats, historial de clubes y nicknames
+  - **Matches**: lista con filtro por estado (SCHEDULED/IN_PROGRESS/FINISHED)
+  - **Statistics**: tabs Goleadores/Asistencias/MVP
+  - **Countries, Leagues, Seasons**: listas con loading/error/empty states
+- **Role-based UI**: botones de crear/recalcular visibles solo según rol
+- **Role badge** en header del Layout
+- **Filtros**: select de estado en Matches
+- **Formularios inline**: crear clubs y jugadores desde la lista
+- **Empty states**: mensajes cuando no hay datos
 
 ---
 
