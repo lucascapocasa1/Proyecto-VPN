@@ -1,0 +1,46 @@
+services:
+  - type: web
+    name: ea-fc-backend
+    runtime: python
+    plan: free
+    buildCommand: cd backend && pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
+    startCommand: cd backend && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "false"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: DB_NAME
+        fromDatabase:
+          name: ea-fc-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: ea-fc-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: ea-fc-db
+          property: password
+      - key: DB_HOST
+        fromDatabase:
+          name: ea-fc-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: ea-fc-db
+          property: port
+      - key: CORS_ALLOWED_ORIGINS
+        value: "https://*.pages.dev,https://*.cloudflarepages.com"
+    dependsOn:
+      - id: ea-fc-db
+        name: ea-fc-db
+
+  - type: postgres
+    name: ea-fc-db
+    plan: free
+    databaseName: ea_fc_platform

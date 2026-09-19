@@ -156,6 +156,27 @@ python manage.py test apps.accounts.tests apps.players.tests apps.clubs.tests ap
 - **Frontend SearchBar**: componente `SearchBar` con búsqueda en tiempo real
 - **Páginas con búsqueda**: Clubs, Players, Matches, Countries, Leagues, Seasons
 
+### Fase 9 — Deployment
+
+- **Render**: Backend desplegado como Web Service con PostgreSQL manejada
+  - `render.yaml`: infraestructura como código (app + database)
+  - `runtime.txt`: Python 3.12 para Render
+  - `gunicorn`: servidor WSGI de producción
+  - `whitenoise`: sirve archivos estáticos sin nginx
+  - `collectstatic`: genera archivos estáticos optimizados
+- **Cloudflare Pages**: Frontend estático con SPA routing
+  - Variable de entorno `VITE_API_URL` para URL del backend
+  - Proxy API configurado en `client.ts`
+- **Variables de entorno**: configuradas en Render dashboard
+- **Health Check**: `GET /api/health/` → `{"status": "ok", "db": "ok"}`
+- **HTTPS**: manejado por Render (backend) y Cloudflare (frontend)
+- **CORS**: configurado para dominios Cloudflare Pages
+
+```bash
+# Deploy backend: Push a GitHub → Render deploy automático
+# Deploy frontend: Push a GitHub → Cloudflare Pages deploy automático
+```
+
 ---
 
 ## Modelo de datos
@@ -227,6 +248,12 @@ Country → League → Season → Division → ClubSeason → Match → MatchPla
 
 ## API REST
 
+### Health Check
+
+```bash
+GET /api/health/              # Health check → {"status": "ok", "db": "ok"}
+```
+
 ### Autenticación
 
 ```bash
@@ -296,6 +323,31 @@ python manage.py test apps.accounts.tests apps.players.tests apps.clubs.tests ap
 cd frontend
 npm install
 npm run dev
+```
+
+### Despliegue en Render
+
+```bash
+# 1. Crear cuenta en Render (https://render.com)
+# 2. Conectar repositorio de GitHub
+# 3. Render detecta render.yaml automáticamente
+# 4. Configurar variables de entorno en dashboard:
+#    - SECRET_KEY: generar uno seguro
+#    - CORS_ALLOWED_ORIGINS: https://tu-proyecto.pages.dev
+# 5. Deploy automático al hacer push a GitHub
+```
+
+### Despliegue en Cloudflare Pages
+
+```bash
+# 1. Crear cuenta en Cloudflare (https://pages.cloudflare.com)
+# 2. Conectar repositorio de GitHub
+# 3. Configurar build:
+#    - Build command: cd frontend && npm install && npm run build
+#    - Build output: frontend/dist
+# 4. Agregar variable de entorno:
+#    - VITE_API_URL: https://tu-backend.onrender.com/api
+# 5. Deploy automático al hacer push a GitHub
 ```
 
 ---

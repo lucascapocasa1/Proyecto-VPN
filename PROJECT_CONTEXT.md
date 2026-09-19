@@ -37,8 +37,8 @@ Plataforma web para gestionar ligas competitivas de **EA Sports FC — Clubes Pr
 | 6. Tests | ✅ | 74 tests pasando en 6 archivos |
 | 7. Frontend-Backend Integration | ✅ | CRUD, loading, error handling, role-based UI |
 | 8. Optimization | ✅ | DRF pagination, django-filter, cache, GZip, select_related/prefetch_related |
-| 9. Deployment | ⏳ | Pendiente — No iniciar sin autorización |
-| 10. Documentation | ⏳ | Pendiente |
+| 9. Deployment | ✅ | Render (backend + PostgreSQL) + Cloudflare Pages (frontend) |
+| 10. Documentation | ⏳ | Pendiente — No iniciar sin autorización |
 
 ---
 
@@ -98,7 +98,7 @@ Plataforma web para gestionar ligas competitivas de **EA Sports FC — Clubes Pr
 backend/
 ├── config/settings/          # base.py, development.py, production.py
 ├── apps/
-│   ├── accounts/             # User (roles), LeagueAdmin, ClubAdmin, permissions, JWT
+│   ├── accounts/             # User (roles), LeagueAdmin, ClubAdmin, permissions, JWT, health check
 │   ├── competitions/         # Country, Game, CompetitionFormat, League, Season, Division
 │   ├── clubs/                # Club, ClubSeason, ClubTitle
 │   ├── players/              # Player, PlayerIdentityHistory, PlayerClubHistory
@@ -106,6 +106,7 @@ backend/
 │   ├── standings/            # Standing (derivated), services.py, zones.py
 │   └── statistics/           # services.py (calcula desde MatchEvent on-demand)
 ├── test_helpers/base.py      # BaseTestCase reutilizable
+├── runtime.txt               # Python version for Render
 ├── manage.py
 └── requirements.txt
 ```
@@ -260,33 +261,83 @@ Seed data disponible via `python manage.py seed_data`:
 
 ---
 
+## Deployment
+
+### Stack de producción
+
+| Servicio | Plataforma | Puerto |
+|----------|------------|--------|
+| Backend (Django + Gunicorn) | Render | 8000 (interno) |
+| PostgreSQL | Render (manejada) | 5432 (interno) |
+| Frontend (React + Vite) | Cloudflare Pages | 443 (HTTPS) |
+
+### Archivos de deployment
+
+| Archivo | Descripción |
+|---------|-------------|
+| `render.yaml` | Infraestructura como código para Render |
+| `backend/runtime.txt` | Versión de Python para Render |
+| `backend/config/settings/production.py` | Settings para Render (Whitenoise, CORS, etc.) |
+| `.env.example` | Variables de entorno documentadas |
+
+### Variables de entorno (Render)
+
+```bash
+DJANGO_SETTINGS_MODULE=config.settings.production
+SECRET_KEY=<auto-generado>
+DEBUG=false
+ALLOWED_HOSTS=.onrender.com
+DB_NAME=ea_fc_platform  # from Render PostgreSQL
+DB_USER=<from database>
+DB_PASSWORD=<from database>
+DB_HOST=<from database>
+DB_PORT=<from database>
+CORS_ALLOWED_ORIGINS=https://*.pages.dev,https://*.cloudflarepages.com
+```
+
+### Health Check
+
+```
+GET /api/health/ → {"status": "ok", "db": "ok"}
+```
+
+### Frontend (Cloudflare Pages)
+
+- Variable de entorno: `VITE_API_URL=https://tu-backend.onrender.com/api`
+- Proxy API configurado en `client.ts`
+
+### Deploy
+
+```bash
+# Backend: Push a GitHub → Render deploy automático
+# Frontend: Push a GitHub → Cloudflare Pages deploy automático
+```
+
+---
+
 ## Archivos importantes
 
 | Archivo | Descripción |
 |---------|-------------|
+| `render.yaml` | Infraestructura Render (app + PostgreSQL) |
 | `backend/config/settings/base.py` | Config Django, AUTH_USER_MODEL, REST_FRAMEWORK, JWT |
 | `backend/config/settings/development.py` | SQLite para tests, PostgreSQL default |
+| `backend/config/settings/production.py` | Settings Render (Whitenoise, CORS, HSTS) |
 | `backend/apps/accounts/permissions.py` | 7 clases de permisos custom |
+| `backend/apps/accounts/urls.py` | Health check endpoint |
 | `backend/apps/standings/services.py` | recalculate_standings, recalculate_all_standings |
 | `backend/apps/statistics/services.py` | Player/club statistics, top scorers/assists/mvp |
 | `backend/apps/matches/services.py` | Lineup validation, BOT completion, goal consistency |
-| `frontend/src/api/client.ts` | Axios + JWT interceptors |
+| `frontend/src/api/client.ts` | Axios + JWT interceptors + VITE_API_URL |
 | `frontend/src/api/index.ts` | API CRUD functions para todos los endpoints |
 | `frontend/src/context/AuthContext.tsx` | Auth context con JWT |
 | `frontend/src/components/ui/Loading.tsx` | Spinner animado |
 | `frontend/src/components/ui/ErrorMessage.tsx` | Error con retry button |
-| `frontend/vite.config.ts` | Vite config con proxy |
+| `frontend/vite.config.ts` | Vite config con proxy + build output |
 
 ---
 
-## Pendiente (Fase 9+)
-
-### Fase 9 — Deployment
-- Docker/docker-compose
-- Variables de entorno
-- HTTPS, CORS production
-- Static files
-- Health checks
+## Pendiente (Fase 10)
 
 ### Fase 10 — Documentation
 - API docs (DRF Spectacular / Swagger)
@@ -295,4 +346,4 @@ Seed data disponible via `python manage.py seed_data`:
 
 ---
 
-*Última actualización: Fase 8 completada*
+*Última actualización: Fase 9 completada*
