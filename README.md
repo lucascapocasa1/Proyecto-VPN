@@ -6,7 +6,7 @@ Plataforma web profesional para gestionar competiciones de **EA Sports FC — Cl
 
 | Capa | Tecnología |
 |------|-----------|
-| Backend | Python, Django, Django REST Framework |
+| Backend | Python, Django, Django REST Framework, django-filter |
 | Base de datos | PostgreSQL |
 | Frontend | React, TypeScript, Vite |
 
@@ -37,6 +37,16 @@ ea-fc-platform/
 │   ├── src/
 │   │   ├── api/                   # Axios client + endpoints
 │   │   ├── components/            # Layout, UI components
+│   │   │   ├── layout/Layout.tsx
+│   │   │   └── ui/
+│   │   │       ├── StandingsTable.tsx
+│   │   │       ├── MatchCard.tsx
+│   │   │       ├── PlayerCard.tsx
+│   │   │       ├── ClubCard.tsx
+│   │   │       ├── Loading.tsx
+│   │   │       ├── ErrorMessage.tsx
+│   │   │       ├── Pagination.tsx
+│   │   │       └── SearchBar.tsx
 │   │   ├── context/               # AuthContext (JWT)
 │   │   ├── pages/                 # Todas las páginas
 │   │   ├── types/                 # TypeScript interfaces
@@ -130,6 +140,22 @@ python manage.py test apps.accounts.tests apps.players.tests apps.clubs.tests ap
 - **Formularios inline**: crear clubs y jugadores desde la lista
 - **Empty states**: mensajes cuando no hay datos
 
+### Fase 8 — Optimization
+
+- **DRF Pagination**: configurada en todos los ViewSets (page 1-25 por defecto)
+- **django-filter**: búsqueda y filtros en todas las entidades
+  - Clubs: `?country=1&is_active=true&search=boca`
+  - Players: `?platform=PC&search=jugador`
+  - Matches: `?season=1&division=1&status=FINISHED`
+  - Standings: `?season=1&division=1`
+  - Leagues: `?country=1&search=liga`
+  - Seasons: `?league=1&status=ACTIVE`
+- **Cache**: `LocMemCache` con timeout 300s para standings, 600s para statistics
+- **GZip Middleware**: compresión de respuestas HTTP
+- **Frontend Pagination**: componente `Pagination` con navegación entre páginas
+- **Frontend SearchBar**: componente `SearchBar` con búsqueda en tiempo real
+- **Páginas con búsqueda**: Clubs, Players, Matches, Countries, Leagues, Seasons
+
 ---
 
 ## Modelo de datos
@@ -213,19 +239,19 @@ POST /api/token/refresh/       # Refresh token
 ### Endpoints públicos
 
 ```bash
-GET /api/countries/
+GET /api/countries/?search=argentina
 GET /api/games/
-GET /api/leagues/
-GET /api/seasons/
+GET /api/leagues/?country=1&search=liga
+GET /api/seasons/?league=1&status=ACTIVE
 GET /api/divisions/
-GET /api/clubs/
-GET /api/players/
-GET /api/matches/
-GET /api/standings/
-GET /api/statistics/top_scorers/?season_id=1
-GET /api/statistics/top_assists/?season_id=1
-GET /api/statistics/top_mvp/?season_id=1
-GET /api/statistics/player/?player_id=1
+GET /api/clubs/?country=1&is_active=true&search=boca
+GET /api/players/?platform=PC&search=jugador
+GET /api/matches/?season=1&division=1&status=FINISHED
+GET /api/standings/?season=1&division=1
+GET /api/statistics/top_scorers/?season_id=1&division_id=1&limit=10
+GET /api/statistics/top_assists/?season_id=1&division_id=1&limit=10
+GET /api/statistics/top_mvp/?season_id=1&division_id=1&limit=10
+GET /api/statistics/player/?player_id=1&season_id=1
 GET /api/statistics/player_history/?player_id=1
 ```
 

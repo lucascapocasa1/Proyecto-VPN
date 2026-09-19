@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { seasonsApi } from "../api";
 import type { SeasonList } from "../types";
 import Loading from "../components/ui/Loading";
 import ErrorMessage from "../components/ui/ErrorMessage";
+import SearchBar from "../components/ui/SearchBar";
 
 const STATUS_LABELS: Record<string, string> = {
   UPCOMING: "Proxima",
@@ -21,17 +22,27 @@ export default function Seasons() {
   const [seasons, setSeasons] = useState<SeasonList[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
-  const fetchData = () => {
+  const fetchData = useCallback(() => {
     setLoading(true);
     setError(null);
     seasonsApi.list()
-      .then((res) => setSeasons(res.data.results))
+      .then((res) => {
+        let filtered = res.data.results;
+        if (search) {
+          filtered = filtered.filter(s =>
+            s.name.toLowerCase().includes(search.toLowerCase()) ||
+            s.league_name.toLowerCase().includes(search.toLowerCase())
+          );
+        }
+        setSeasons(filtered);
+      })
       .catch(() => setError("Error al cargar temporadas"))
       .finally(() => setLoading(false));
-  };
+  }, [search]);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   if (loading) return <Loading />;
   if (error) return <ErrorMessage message={error} onRetry={fetchData} />;
@@ -39,6 +50,7 @@ export default function Seasons() {
   return (
     <div className="list-page">
       <h1>Temporadas</h1>
+      <SearchBar value={search} onChange={setSearch} placeholder="Buscar temporada..." />
       <div className="card-grid">
         {seasons.map((season) => (
           <Link key={season.id} to={`/standings/${season.id}`} className="card">
@@ -50,7 +62,7 @@ export default function Seasons() {
           </Link>
         ))}
       </div>
-      {seasons.length === 0 && <p className="empty">No hay temporadas registradas</p>}
+      {seasons.length === 0 && <p className="empty">No se encontraron temporadas</p>}
     </div>
   );
 }

@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { clubsApi } from "../api";
 import type { Club } from "../types";
 import ClubCard from "../components/ui/ClubCard";
 import Loading from "../components/ui/Loading";
 import ErrorMessage from "../components/ui/ErrorMessage";
+import Pagination from "../components/ui/Pagination";
+import SearchBar from "../components/ui/SearchBar";
 import { useAuth } from "../context/AuthContext";
 
 export default function Clubs() {
@@ -13,20 +15,33 @@ export default function Clubs() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", short_name: "", country: 1 });
   const [submitting, setSubmitting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [search, setSearch] = useState("");
   const { user } = useAuth();
 
   const canManage = user?.role === "SUPERADMIN";
 
-  const fetchClubs = () => {
+  const fetchClubs = useCallback(() => {
     setLoading(true);
     setError(null);
     clubsApi.list()
-      .then((res) => setClubs(res.data.results))
+      .then((res) => {
+        let filtered = res.data.results;
+        if (search) {
+          filtered = filtered.filter(c =>
+            c.name.toLowerCase().includes(search.toLowerCase()) ||
+            c.short_name.toLowerCase().includes(search.toLowerCase())
+          );
+        }
+        setClubs(filtered);
+        setTotalPages(Math.max(1, Math.ceil(res.data.count / 25)));
+      })
       .catch(() => setError("Error al cargar clubes"))
       .finally(() => setLoading(false));
-  };
+  }, [search]);
 
-  useEffect(() => { fetchClubs(); }, []);
+  useEffect(() => { fetchClubs(); }, [fetchClubs]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,11 +95,17 @@ export default function Clubs() {
         </form>
       )}
 
+      <SearchBar value={search} onChange={setSearch} placeholder="Buscar club..." />
+
       <div className="card-grid">
         {clubs.map((club) => (
           <ClubCard key={club.id} club={club} />
         ))}
       </div>
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+
+      {clubs.length === 0 && <p className="empty">No se encontraron clubes</p>}
     </div>
   );
 }

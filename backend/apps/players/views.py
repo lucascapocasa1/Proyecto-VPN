@@ -1,4 +1,5 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, filters
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import Player, PlayerIdentityHistory, PlayerClubHistory
 from .serializers import (
     PlayerSerializer, PlayerDetailSerializer,
@@ -9,6 +10,9 @@ from apps.accounts.permissions import IsSuperAdmin, IsAdminLiga, IsAdminClub, Is
 
 class PlayerViewSet(viewsets.ModelViewSet):
     queryset = Player.objects.select_related("country").all()
+    filterset_fields = ["country", "platform", "is_active"]
+    search_fields = ["nickname"]
+    ordering_fields = ["nickname", "created_at"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -24,8 +28,12 @@ class PlayerViewSet(viewsets.ModelViewSet):
 
 
 class PlayerIdentityHistoryViewSet(viewsets.ModelViewSet):
-    queryset = PlayerIdentityHistory.objects.select_related("player", "changed_by").all()
+    queryset = PlayerIdentityHistory.objects.select_related(
+        "player", "changed_by"
+    ).all()
     serializer_class = PlayerIdentityHistorySerializer
+    filterset_fields = ["player"]
+    ordering_fields = ["changed_at"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -41,6 +49,8 @@ class PlayerClubHistoryViewSet(viewsets.ModelViewSet):
         "player", "club_season__club", "club_season__season", "club_season__division"
     ).all()
     serializer_class = PlayerClubHistorySerializer
+    filterset_fields = ["player", "club_season"]
+    ordering_fields = ["joined_at"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:

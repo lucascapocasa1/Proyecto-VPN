@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "corsheaders",
+    "django_filters",
     # Local apps
     "apps.accounts",
     "apps.competitions",
@@ -41,6 +42,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django.middleware.gzip.GZipMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -107,6 +109,11 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 25,
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
+    ],
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
@@ -116,6 +123,19 @@ REST_FRAMEWORK = {
         "user": "1000/hour",
     },
 }
+
+# Cache
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "ea-fc-cache",
+        "TIMEOUT": 300,
+    }
+}
+
+# Cache timeouts (seconds)
+STATISTICS_CACHE_TIMEOUT = 600  # 10 minutes
+STANDINGS_CACHE_TIMEOUT = 300   # 5 minutes
 
 # CORS
 CORS_ALLOWED_ORIGINS = env.list(

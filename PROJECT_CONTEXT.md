@@ -36,8 +36,8 @@ Plataforma web para gestionar ligas competitivas de **EA Sports FC — Clubes Pr
 | 5. Auth y Permisos | ✅ | 7 clases de permisos, role-based en todos los ViewSets |
 | 6. Tests | ✅ | 74 tests pasando en 6 archivos |
 | 7. Frontend-Backend Integration | ✅ | CRUD, loading, error handling, role-based UI |
-| **8. Optimization** | ⏳ | **PRÓXIMA — No iniciar sin autorización** |
-| 9. Deployment | ⏳ | Pendiente |
+| 8. Optimization | ✅ | DRF pagination, django-filter, cache, GZip, select_related/prefetch_related |
+| 9. Deployment | ⏳ | Pendiente — No iniciar sin autorización |
 | 10. Documentation | ⏳ | Pendiente |
 
 ---
@@ -279,14 +279,7 @@ Seed data disponible via `python manage.py seed_data`:
 
 ---
 
-## Pendiente (Fase 8+)
-
-### Fase 8 — Optimization
-- Paginación DRF en todos los ViewSets
-- Búsqueda y filtros (django-filter)
-- select_related / prefetch_related para evitar N+1
-- Cache de estadísticas (Redis o cache simple)
-- Compresión de respuesta
+## Pendiente (Fase 9+)
 
 ### Fase 9 — Deployment
 - Docker/docker-compose
@@ -302,4 +295,4 @@ Seed data disponible via `python manage.py seed_data`:
 
 ---
 
-*Última actualización: Fase 7 completada*
+*Última actualización: Fase 8 completada*

@@ -1,4 +1,5 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, filters
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import Country, Game, CompetitionFormat, League, Season, Division
 from .serializers import (
     CountrySerializer, GameSerializer, CompetitionFormatSerializer,
@@ -10,6 +11,9 @@ from apps.accounts.permissions import IsSuperAdmin, IsAdminLiga
 class CountryViewSet(viewsets.ModelViewSet):
     queryset = Country.objects.all()
     serializer_class = CountrySerializer
+    filterset_fields = ["code"]
+    search_fields = ["name", "code"]
+    ordering_fields = ["name", "code"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -20,6 +24,9 @@ class CountryViewSet(viewsets.ModelViewSet):
 class GameViewSet(viewsets.ModelViewSet):
     queryset = Game.objects.all()
     serializer_class = GameSerializer
+    filterset_fields = ["year"]
+    search_fields = ["name"]
+    ordering_fields = ["name", "year"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -30,6 +37,8 @@ class GameViewSet(viewsets.ModelViewSet):
 class CompetitionFormatViewSet(viewsets.ModelViewSet):
     queryset = CompetitionFormat.objects.all()
     serializer_class = CompetitionFormatSerializer
+    search_fields = ["name"]
+    ordering_fields = ["name"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -40,6 +49,9 @@ class CompetitionFormatViewSet(viewsets.ModelViewSet):
 class LeagueViewSet(viewsets.ModelViewSet):
     queryset = League.objects.select_related("country").all()
     serializer_class = LeagueSerializer
+    filterset_fields = ["country"]
+    search_fields = ["name"]
+    ordering_fields = ["name"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -48,7 +60,13 @@ class LeagueViewSet(viewsets.ModelViewSet):
 
 
 class SeasonViewSet(viewsets.ModelViewSet):
-    queryset = Season.objects.select_related("league", "game", "format").prefetch_related("divisions").all()
+    queryset = Season.objects.select_related(
+        "league", "game", "format"
+    ).prefetch_related("divisions").all()
+
+    filterset_fields = ["league", "game", "status"]
+    search_fields = ["name"]
+    ordering_fields = ["name", "number", "status"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -64,6 +82,9 @@ class SeasonViewSet(viewsets.ModelViewSet):
 class DivisionViewSet(viewsets.ModelViewSet):
     queryset = Division.objects.select_related("season").all()
     serializer_class = DivisionSerializer
+    filterset_fields = ["season", "order"]
+    search_fields = ["name"]
+    ordering_fields = ["name", "order"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:

@@ -1,25 +1,35 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { leaguesApi } from "../api";
 import type { League } from "../types";
 import Loading from "../components/ui/Loading";
 import ErrorMessage from "../components/ui/ErrorMessage";
+import SearchBar from "../components/ui/SearchBar";
 
 export default function Leagues() {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
-  const fetchData = () => {
+  const fetchData = useCallback(() => {
     setLoading(true);
     setError(null);
     leaguesApi.list()
-      .then((res) => setLeagues(res.data.results))
+      .then((res) => {
+        let filtered = res.data.results;
+        if (search) {
+          filtered = filtered.filter(l =>
+            l.name.toLowerCase().includes(search.toLowerCase())
+          );
+        }
+        setLeagues(filtered);
+      })
       .catch(() => setError("Error al cargar ligas"))
       .finally(() => setLoading(false));
-  };
+  }, [search]);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   if (loading) return <Loading />;
   if (error) return <ErrorMessage message={error} onRetry={fetchData} />;
@@ -27,6 +37,7 @@ export default function Leagues() {
   return (
     <div className="list-page">
       <h1>Ligas</h1>
+      <SearchBar value={search} onChange={setSearch} placeholder="Buscar liga..." />
       <div className="card-grid">
         {leagues.map((league) => (
           <Link key={league.id} to={`/seasons?league=${league.id}`} className="card">
@@ -35,7 +46,7 @@ export default function Leagues() {
           </Link>
         ))}
       </div>
-      {leagues.length === 0 && <p className="empty">No hay ligas registradas</p>}
+      {leagues.length === 0 && <p className="empty">No se encontraron ligas</p>}
     </div>
   );
 }
