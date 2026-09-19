@@ -16,6 +16,8 @@ User = get_user_model()
 
 class AuthViewSet(viewsets.GenericViewSet):
     permission_classes = [permissions.AllowAny]
+    serializer_class = LoginSerializer
+    tags = ["Auth"]
 
     @action(detail=False, methods=["post"])
     def login(self, request):
@@ -63,6 +65,7 @@ class AuthViewSet(viewsets.GenericViewSet):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    tags = ["Users"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -73,6 +76,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class LeagueAdminViewSet(viewsets.ModelViewSet):
     queryset = LeagueAdmin.objects.select_related("user", "league").all()
     serializer_class = LeagueAdminSerializer
+    tags = ["Users"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -83,6 +87,7 @@ class LeagueAdminViewSet(viewsets.ModelViewSet):
 class ClubAdminViewSet(viewsets.ModelViewSet):
     queryset = ClubAdmin.objects.select_related("user", "club").all()
     serializer_class = ClubAdminSerializer
+    tags = ["Users"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:

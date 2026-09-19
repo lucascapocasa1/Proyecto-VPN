@@ -13,6 +13,8 @@ class PlayerViewSet(viewsets.ModelViewSet):
     filterset_fields = ["country", "platform", "is_active"]
     search_fields = ["nickname"]
     ordering_fields = ["nickname", "created_at"]
+    tags = ["Players"]
+    tags = ["Players"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -34,6 +36,8 @@ class PlayerIdentityHistoryViewSet(viewsets.ModelViewSet):
     serializer_class = PlayerIdentityHistorySerializer
     filterset_fields = ["player"]
     ordering_fields = ["changed_at"]
+    tags = ["Players"]
+    tags = ["Players"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -51,6 +55,8 @@ class PlayerClubHistoryViewSet(viewsets.ModelViewSet):
     serializer_class = PlayerClubHistorySerializer
     filterset_fields = ["player", "club_season"]
     ordering_fields = ["joined_at"]
+    tags = ["Players"]
+    tags = ["Players"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:

@@ -13,6 +13,8 @@ class MatchdayViewSet(viewsets.ModelViewSet):
     serializer_class = MatchdaySerializer
     filterset_fields = ["season", "division"]
     ordering_fields = ["number", "date"]
+    tags = ["Matches"]
+    tags = ["Matches"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -28,6 +30,7 @@ class MatchViewSet(viewsets.ModelViewSet):
     filterset_fields = ["season", "division", "matchday", "status"]
     search_fields = ["home_club_season__club__name", "away_club_season__club__name"]
     ordering_fields = ["date", "status", "created_at"]
+    tags = ["Matches"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -46,6 +49,7 @@ class MatchPlayerViewSet(viewsets.ModelViewSet):
     ).all()
     serializer_class = MatchPlayerSerializer
     filterset_fields = ["match", "player", "club_season"]
+    tags = ["Matches"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -60,6 +64,7 @@ class MatchEventViewSet(viewsets.ModelViewSet):
     serializer_class = MatchEventSerializer
     filterset_fields = ["match", "match_player", "event_type"]
     ordering_fields = ["minute"]
+    tags = ["Matches"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:

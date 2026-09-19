@@ -177,6 +177,16 @@ python manage.py test apps.accounts.tests apps.players.tests apps.clubs.tests ap
 # Deploy frontend: Push a GitHub → Cloudflare Pages deploy automático
 ```
 
+### Fase 10 — Documentation
+
+- **drf-spectacular**: documentación interactiva de la API
+  - **Swagger UI**: `/api/docs/` — probar endpoints en el navegador
+  - **ReDoc**: `/api/redoc/` — documentación completa y elegante
+  - **OpenAPI Schema**: `/api/schema/` — schema JSON/YAML descargable
+- **Tags en ViewSets**: 22 ViewSets organizados por categoría (Auth, Users, Countries, Games, Leagues, Seasons, Clubs, Players, Matches, Standings, Statistics)
+- **USER_GUIDE.md**: guía de uso para usuarios de la plataforma
+- **DEVELOPER_GUIDE.md**: guía de desarrollo para programadores
+
 ---
 
 ## Modelo de datos
@@ -252,6 +262,14 @@ Country → League → Season → Division → ClubSeason → Match → MatchPla
 
 ```bash
 GET /api/health/              # Health check → {"status": "ok", "db": "ok"}
+```
+
+### Documentación de la API
+
+```bash
+GET /api/docs/                # Swagger UI (interfaz interactiva)
+GET /api/redoc/               # ReDoc (documentación elegante)
+GET /api/schema/              # OpenAPI schema (JSON/YAML)
 ```
 
 ### Autenticación

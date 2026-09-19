@@ -27,6 +27,8 @@ STATISTICS_CACHE = getattr(settings, "STATISTICS_CACHE_TIMEOUT", 600)
 
 class StatisticsViewSet(viewsets.GenericViewSet):
     permission_classes = [permissions.AllowAny]
+    serializer_class = TopScorerSerializer
+    tags = ["Statistics"]
 
     @action(detail=False, methods=["get"])
     def player(self, request):

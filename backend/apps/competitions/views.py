@@ -14,6 +14,7 @@ class CountryViewSet(viewsets.ModelViewSet):
     filterset_fields = ["code"]
     search_fields = ["name", "code"]
     ordering_fields = ["name", "code"]
+    tags = ["Countries"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -27,6 +28,7 @@ class GameViewSet(viewsets.ModelViewSet):
     filterset_fields = ["year"]
     search_fields = ["name"]
     ordering_fields = ["name", "year"]
+    tags = ["Games"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -39,6 +41,7 @@ class CompetitionFormatViewSet(viewsets.ModelViewSet):
     serializer_class = CompetitionFormatSerializer
     search_fields = ["name"]
     ordering_fields = ["name"]
+    tags = ["Games"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -52,6 +55,7 @@ class LeagueViewSet(viewsets.ModelViewSet):
     filterset_fields = ["country"]
     search_fields = ["name"]
     ordering_fields = ["name"]
+    tags = ["Leagues"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -67,6 +71,7 @@ class SeasonViewSet(viewsets.ModelViewSet):
     filterset_fields = ["league", "game", "status"]
     search_fields = ["name"]
     ordering_fields = ["name", "number", "status"]
+    tags = ["Seasons"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -85,6 +90,7 @@ class DivisionViewSet(viewsets.ModelViewSet):
     filterset_fields = ["season", "order"]
     search_fields = ["name"]
     ordering_fields = ["name", "order"]
+    tags = ["Seasons"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:

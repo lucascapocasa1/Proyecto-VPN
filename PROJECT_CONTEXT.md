@@ -38,7 +38,7 @@ Plataforma web para gestionar ligas competitivas de **EA Sports FC — Clubes Pr
 | 7. Frontend-Backend Integration | ✅ | CRUD, loading, error handling, role-based UI |
 | 8. Optimization | ✅ | DRF pagination, django-filter, cache, GZip, select_related/prefetch_related |
 | 9. Deployment | ✅ | Render (backend + PostgreSQL) + Cloudflare Pages (frontend) |
-| 10. Documentation | ⏳ | Pendiente — No iniciar sin autorización |
+| 10. Documentation | ✅ | drf-spectacular (Swagger/ReDoc), USER_GUIDE.md, DEVELOPER_GUIDE.md |
 
 ---
 
@@ -337,13 +337,10 @@ GET /api/health/ → {"status": "ok", "db": "ok"}
 
 ---
 
-## Pendiente (Fase 10)
+## Pendiente
 
-### Fase 10 — Documentation
-- API docs (DRF Spectacular / Swagger)
-- User guide
-- Developer guide
+Todas las fases completadas.
 
 ---
 
-*Última actualización: Fase 9 completada*
+*Última actualización: Fase 10 completada — Proyecto completo*

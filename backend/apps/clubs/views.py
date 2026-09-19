@@ -10,6 +10,8 @@ class ClubViewSet(viewsets.ModelViewSet):
     filterset_fields = ["country", "is_active"]
     search_fields = ["name", "short_name"]
     ordering_fields = ["name", "created_at"]
+    tags = ["Clubs"]
+    tags = ["Clubs"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -28,6 +30,8 @@ class ClubSeasonViewSet(viewsets.ModelViewSet):
     ).all()
     filterset_fields = ["club", "season", "division", "status"]
     ordering_fields = ["created_at"]
+    tags = ["Clubs"]
+    tags = ["Clubs"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -42,6 +46,8 @@ class ClubTitleViewSet(viewsets.ModelViewSet):
     filterset_fields = ["club", "season", "division", "title_type"]
     search_fields = ["name"]
     ordering_fields = ["awarded_at", "name"]
+    tags = ["Clubs"]
+    tags = ["Clubs"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:

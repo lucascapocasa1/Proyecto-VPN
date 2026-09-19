@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "corsheaders",
     "django_filters",
+    "drf_spectacular",
     # Local apps
     "apps.accounts",
     "apps.competitions",
@@ -128,6 +129,30 @@ REST_FRAMEWORK = {
         "anon": "100/hour",
         "user": "1000/hour",
     },
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# DRF Spectacular (OpenAPI / Swagger)
+SPECTACULAR_SETTINGS = {
+    "TITLE": "EA FC Clubes Pro API",
+    "DESCRIPTION": "API REST para la plataforma de gestion de ligas de EA Sports FC Clubes Pro",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "TAGS": [
+        {"name": "Auth", "description": "Login, registro, perfil y refresh de token"},
+        {"name": "Users", "description": "Gestion de usuarios (SUPERADMIN)"},
+        {"name": "Countries", "description": "Paises"},
+        {"name": "Games", "description": "Ediciones del juego"},
+        {"name": "Leagues", "description": "Ligas dentro de un pais"},
+        {"name": "Seasons", "description": "Temporadas dentro de una liga"},
+        {"name": "Divisions", "description": "Divisiones dentro de una temporada"},
+        {"name": "Clubs", "description": "Clubes y participaciones por temporada"},
+        {"name": "Players", "description": "Jugadores e historial de identidad/clubes"},
+        {"name": "Matches", "description": "Partidos, alineaciones y eventos"},
+        {"name": "Standings", "description": "Tabla de posiciones y recalculo"},
+        {"name": "Statistics", "description": "Estadisticas derivadas, rankings y goleadores"},
+    ],
 }
 
 # Cache

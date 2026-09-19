@@ -18,6 +18,7 @@ class StandingViewSet(viewsets.ModelViewSet):
     serializer_class = StandingSerializer
     filterset_fields = ["season", "division", "club_season"]
     ordering_fields = ["position", "points", "goal_difference"]
+    tags = ["Standings"]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
