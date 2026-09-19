@@ -382,3 +382,14 @@ npm run dev
 8. **Platform es opcional**: No divide ligas ni tablas (EA FC tiene crossplay)
 9. **CompetitionFormat**: Configurable por Season (round robin, doble, personalizado)
 10. **Zonas de tabla**: Configurables por Division (campeón, reducido, promoción, descenso)
+
+---
+
+## Proximamente
+
+Ver `PROXIMOS_CAMBIOS.md` para el plan detallado:
+
+- **Base de datos grande** — 20 equipos por división, 15 jugadores por equipo, datos realistas
+- **Mercado de pases** — Free agents, invitaciones a clubes, ventana de pases controlada por admin
+- **Carga de estadísticas** — Formulario para cargar goles, asistencias, tarjetas y MVP por partido
+- **Brasil** — Tercer país con la misma estructura de ligas

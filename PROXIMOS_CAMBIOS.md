@@ -201,3 +201,68 @@ Agregar Brasil como tercer pais con la misma logica (2 divisiones, 20 equipos ca
 ### Estado
 
 Pendiente — agregar cuando la base de datos de 2 paises funcione bien
+
+---
+
+## 4. Carga de estadisticas de partidos
+
+### Descripcion
+
+Sistema para cargar las estadisticas de cada partido (goles, asistencias, tarjetas, MVP). Hay dos opciones posibles.
+
+### Opcion A — Carga manual (seleccionada por ahora)
+
+**Flujo:**
+1. El capitan del equipo graba el video de la pestaña "Rendimiento" del partido
+2. Sube el video a YouTube y comparte el link
+3. El admin de la division carga manualmente: goles, asistencias, tarjetas y MVP
+
+**Ventajas:**
+- Sin dependencias tecnologicas额外
+- Flujo conocido y confiable
+- Menos puntos de fallo
+- Datos suficientes para standings y rankings
+
+**Desventajas:**
+- Menos datos (solo lo esencial)
+- Dependiente del admin
+
+### Opcion B — Carga via OCR (futuro)
+
+**Flujo:**
+1. El capitan sube un screenshot de la pantalla "Rendimiento"
+2. El sistema parsea la imagen con OCR y extrae todas las estadisticas
+3. El admin verifica y corrige si es necesario
+4. Se guardan los datos
+
+**Tecnologias existentes:**
+- Proyecto: FIFASTATS (https://github.com/lucascapocasa1/FIFASTATS---Al-Yateh)
+- Backend: Node.js, Express, PostgreSQL
+- OCR: Tesseract.js + Sharp (image processing)
+- Frontend: Chart.js (dashboards, radar charts, comparaciones)
+
+**Integracion con Django:**
+- Opcion 1: Servicio Node.js separado (puerto diferente)
+- Opcion 2: Reescribir OCR en Python con pytesseract + Pillow
+- Opcion 3: Microservicio Docker con el proyecto FIFASTATS
+
+**Ventajas:**
+- Mas datos (goles, asistencias, pases, rating, km, etc.)
+- Menos carga manual
+- Dashboards y graficos comparativos
+
+**Desventajas:**
+- Complejidad de integracion
+- Errores de OCR que requieren verificacion
+- Mas dependencias
+
+### Estado
+
+Opcion A seleccionada. Opcion B pendiente para futuro.
+
+### Archivos a crear/modificar (Opcion A)
+
+- `apps/matches/views.py` — Endpoint para cargar stats de un partido
+- `apps/matches/serializers.py` — Serializer para carga de stats
+- `frontend/src/pages/MatchDetail.tsx` — Formulario de carga de stats
+- `apps/statistics/services.py` — Recalcular stats despues de cargar eventos

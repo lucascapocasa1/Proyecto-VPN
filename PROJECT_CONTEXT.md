@@ -339,8 +339,13 @@ GET /api/health/ → {"status": "ok", "db": "ok"}
 
 ## Pendiente
 
-Todas las fases completadas.
+Ver `PROXIMOS_CAMBIOS.md` para detalles completos:
+
+1. **Base de datos grande** — 20 equipos/división, 15 jugadores/equipo, Argentina + Uruguay
+2. **Mercado de pases** — Free agents, invitaciones, ventana de pases
+3. **Brasil** — Agregar como tercer país
+4. **Carga de estadísticas** — Formulario manual para goles, asistencias, tarjetas, MVP
 
 ---
 
-*Última actualización: Fase 10 completada — Proyecto completo*
+*Última actualización: Fase 10 completada — Features pendientes documentadas*
