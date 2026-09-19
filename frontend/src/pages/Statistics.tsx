@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { statisticsApi } from "../api";
 import type { TopScorer, TopAssist, TopMVP } from "../types";
+import Loading from "../components/ui/Loading";
+import ErrorMessage from "../components/ui/ErrorMessage";
 
 type TabType = "scorers" | "assists" | "mvp";
 
@@ -11,8 +13,11 @@ export default function Statistics() {
   const [assists, setAssists] = useState<TopAssist[]>([]);
   const [mvp, setMvp] = useState<TopMVP[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchData = () => {
+    setLoading(true);
+    setError(null);
     Promise.all([
       statisticsApi.topScorers({ limit: 20 }),
       statisticsApi.topAssists({ limit: 20 }),
@@ -21,10 +26,13 @@ export default function Statistics() {
       setScorers(scorersRes.data);
       setAssists(assistsRes.data);
       setMvp(mvpRes.data);
-    }).finally(() => setLoading(false));
-  }, []);
+    }).catch(() => setError("Error al cargar estadisticas")).finally(() => setLoading(false));
+  };
 
-  if (loading) return <div className="loading">Cargando...</div>;
+  useEffect(() => { fetchData(); }, []);
+
+  if (loading) return <Loading />;
+  if (error) return <ErrorMessage message={error} onRetry={fetchData} />;
 
   return (
     <div className="statistics-page">
@@ -65,6 +73,12 @@ export default function Statistics() {
           </Link>
         ))}
       </div>
+
+      {((tab === "scorers" && scorers.length === 0) ||
+        (tab === "assists" && assists.length === 0) ||
+        (tab === "mvp" && mvp.length === 0)) && (
+        <p className="empty">No hay datos para esta estadistica</p>
+      )}
     </div>
   );
 }

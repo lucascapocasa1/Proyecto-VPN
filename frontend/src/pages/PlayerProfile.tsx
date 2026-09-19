@@ -1,27 +1,35 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { playersApi, statisticsApi } from "../api";
 import type { PlayerDetail } from "../types";
+import Loading from "../components/ui/Loading";
+import ErrorMessage from "../components/ui/ErrorMessage";
 
 export default function PlayerProfile() {
   const { id } = useParams<{ id: string }>();
   const [player, setPlayer] = useState<PlayerDetail | null>(null);
   const [stats, setStats] = useState<Record<string, number> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchData = () => {
     if (!id) return;
+    setLoading(true);
+    setError(null);
     Promise.all([
       playersApi.get(Number(id)),
       statisticsApi.player(Number(id)),
     ]).then(([playerRes, statsRes]) => {
       setPlayer(playerRes.data);
       setStats(statsRes.data.stats);
-    }).finally(() => setLoading(false));
-  }, [id]);
+    }).catch(() => setError("Jugador no encontrado")).finally(() => setLoading(false));
+  };
 
-  if (loading) return <div className="loading">Cargando...</div>;
-  if (!player) return <div className="error">Jugador no encontrado</div>;
+  useEffect(() => { fetchData(); }, [id]);
+
+  if (loading) return <Loading />;
+  if (error) return <ErrorMessage message={error} onRetry={fetchData} />;
+  if (!player) return <ErrorMessage message="Jugador no encontrado" />;
 
   const currentClub = player.club_history.find((h) => h.is_current);
   const pastClubs = player.club_history.filter((h) => !h.is_current);
@@ -44,9 +52,9 @@ export default function PlayerProfile() {
       {currentClub && (
         <section className="profile-section">
           <h2>Club Actual</h2>
-          <Link to={`/clubs/0`} className="current-club">
+          <div className="current-club">
             {currentClub.club_name} — {currentClub.division_name}
-          </Link>
+          </div>
         </section>
       )}
 

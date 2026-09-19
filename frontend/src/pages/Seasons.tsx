@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { seasonsApi } from "../api";
 import type { SeasonList } from "../types";
+import Loading from "../components/ui/Loading";
+import ErrorMessage from "../components/ui/ErrorMessage";
 
 const STATUS_LABELS: Record<string, string> = {
   UPCOMING: "Proxima",
@@ -18,14 +20,21 @@ const STATUS_COLORS: Record<string, string> = {
 export default function Seasons() {
   const [seasons, setSeasons] = useState<SeasonList[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchData = () => {
+    setLoading(true);
+    setError(null);
     seasonsApi.list()
       .then((res) => setSeasons(res.data.results))
+      .catch(() => setError("Error al cargar temporadas"))
       .finally(() => setLoading(false));
-  }, []);
+  };
 
-  if (loading) return <div className="loading">Cargando...</div>;
+  useEffect(() => { fetchData(); }, []);
+
+  if (loading) return <Loading />;
+  if (error) return <ErrorMessage message={error} onRetry={fetchData} />;
 
   return (
     <div className="list-page">
@@ -41,6 +50,7 @@ export default function Seasons() {
           </Link>
         ))}
       </div>
+      {seasons.length === 0 && <p className="empty">No hay temporadas registradas</p>}
     </div>
   );
 }

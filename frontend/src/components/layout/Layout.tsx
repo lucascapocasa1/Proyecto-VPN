@@ -25,6 +25,7 @@ export default function Layout() {
             {isAuthenticated ? (
               <div className="user-menu">
                 <span className="username">{user?.username}</span>
+                <span className="role-badge">{user?.role}</span>
                 <button onClick={logout} className="btn btn-sm">Salir</button>
               </div>
             ) : (

@@ -1,10 +1,10 @@
 import type { Standing } from "../../types";
 
 const ZONE_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  CAMPEON: { bg: "#fbbf24", text: "#78350f", label: "CAMPEON" },
-  REDUCIDO: { bg: "#60a5fa", text: "#1e3a5f", label: "REDUCIDO" },
-  PROMOCION: { bg: "#34d399", text: "#064e3b", label: "PROMOCION" },
-  DESCENSO: { bg: "#f87171", text: "#7f1d1d", label: "DESCENSO" },
+  "CAMPEÓN": { bg: "#fbbf24", text: "#78350f", label: "CAMPEÓN" },
+  "REDUCIDO": { bg: "#60a5fa", text: "#1e3a5f", label: "REDUCIDO" },
+  "PROMOCIÓN": { bg: "#34d399", text: "#064e3b", label: "PROMOCIÓN" },
+  "DESCENSO": { bg: "#f87171", text: "#7f1d1d", label: "DESCENSO" },
 };
 
 interface StandingsTableProps {
@@ -35,7 +35,7 @@ export default function StandingsTable({ standings, showZone = true }: Standings
           {standings.map((s) => {
             const zone = s.zone ? ZONE_COLORS[s.zone] : null;
             return (
-              <tr key={s.id} className={zone ? `zone-${s.zone!.toLowerCase()}` : ""}>
+              <tr key={s.id}>
                 <td className="col-pos">{s.position}</td>
                 <td className="col-club">{s.club_name}</td>
                 <td className="col-num">{s.played}</td>

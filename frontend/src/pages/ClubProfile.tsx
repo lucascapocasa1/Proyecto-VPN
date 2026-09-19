@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { clubsApi } from "../api";
 import type { ClubDetail } from "../types";
+import Loading from "../components/ui/Loading";
+import ErrorMessage from "../components/ui/ErrorMessage";
 
 const TITLE_BADGES: Record<string, { label: string; color: string }> = {
   CHAMPION: { label: "CAMPEON", color: "#fbbf24" },
@@ -14,16 +16,23 @@ export default function ClubProfile() {
   const { id } = useParams<{ id: string }>();
   const [club, setClub] = useState<ClubDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchClub = () => {
     if (!id) return;
+    setLoading(true);
+    setError(null);
     clubsApi.get(Number(id))
       .then((res) => setClub(res.data))
+      .catch(() => setError("Club no encontrado"))
       .finally(() => setLoading(false));
-  }, [id]);
+  };
 
-  if (loading) return <div className="loading">Cargando...</div>;
-  if (!club) return <div className="error">Club no encontrado</div>;
+  useEffect(() => { fetchClub(); }, [id]);
+
+  if (loading) return <Loading />;
+  if (error) return <ErrorMessage message={error} onRetry={fetchClub} />;
+  if (!club) return <ErrorMessage message="Club no encontrado" />;
 
   return (
     <div className="club-profile">
@@ -76,6 +85,10 @@ export default function ClubProfile() {
             ))}
           </div>
         </section>
+      )}
+
+      {club.seasons.length === 0 && club.titles.length === 0 && (
+        <p className="empty">Este club no tiene participaciones ni titulos registrados</p>
       )}
     </div>
   );

@@ -2,14 +2,19 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { seasonsApi, clubsApi, statisticsApi } from "../api";
 import type { SeasonList, Club, TopScorer } from "../types";
+import Loading from "../components/ui/Loading";
+import ErrorMessage from "../components/ui/ErrorMessage";
 
 export default function Home() {
   const [seasons, setSeasons] = useState<SeasonList[]>([]);
   const [clubs, setClubs] = useState<Club[]>([]);
   const [topScorers, setTopScorers] = useState<TopScorer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchData = () => {
+    setLoading(true);
+    setError(null);
     Promise.all([
       seasonsApi.list(),
       clubsApi.list(),
@@ -18,10 +23,13 @@ export default function Home() {
       setSeasons(seasonsRes.data.results);
       setClubs(clubsRes.data.results.slice(0, 8));
       setTopScorers(scorersRes.data);
-    }).finally(() => setLoading(false));
-  }, []);
+    }).catch(() => setError("Error al cargar datos")).finally(() => setLoading(false));
+  };
 
-  if (loading) return <div className="loading">Cargando...</div>;
+  useEffect(() => { fetchData(); }, []);
+
+  if (loading) return <Loading />;
+  if (error) return <ErrorMessage message={error} onRetry={fetchData} />;
 
   return (
     <div className="home">
@@ -34,7 +42,7 @@ export default function Home() {
         <h2>Temporadas Activas</h2>
         <div className="card-grid">
           {seasons.filter(s => s.status === "ACTIVE").map((season) => (
-            <Link key={season.id} to={`/seasons/${season.id}`} className="card">
+            <Link key={season.id} to={`/standings/${season.id}`} className="card">
               <h3>{season.name}</h3>
               <p>{season.league_name}</p>
               <span className="badge badge-active">Activa</span>
@@ -69,6 +77,7 @@ export default function Home() {
               <span className="top-value">{s.goals} goles</span>
             </Link>
           ))}
+          {topScorers.length === 0 && <p className="empty">No hay goleadores registrados</p>}
         </div>
       </section>
     </div>

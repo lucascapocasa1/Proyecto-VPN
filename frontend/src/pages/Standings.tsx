@@ -1,29 +1,54 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { standingsApi, seasonsApi } from "../api";
 import type { Standing, Season } from "../types";
 import StandingsTable from "../components/ui/StandingsTable";
+import Loading from "../components/ui/Loading";
+import ErrorMessage from "../components/ui/ErrorMessage";
+import { useAuth } from "../context/AuthContext";
 
 export default function Standings() {
   const { seasonId, divisionId } = useParams<{ seasonId: string; divisionId: string }>();
   const [standings, setStandings] = useState<Standing[]>([]);
   const [season, setSeason] = useState<Season | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [recalculating, setRecalculating] = useState(false);
+  const { user } = useAuth();
 
-  useEffect(() => {
+  const canRecalculate = user?.role === "SUPERADMIN" || user?.role === "ADMIN_LIGA";
+
+  const fetchData = useCallback(() => {
     if (!seasonId) return;
     setLoading(true);
+    setError(null);
     Promise.all([
       seasonsApi.get(Number(seasonId)),
       standingsApi.list({ season: Number(seasonId), division: divisionId ? Number(divisionId) : undefined }),
     ]).then(([seasonRes, standingsRes]) => {
       setSeason(seasonRes.data);
       setStandings(standingsRes.data.results);
-    }).finally(() => setLoading(false));
+    }).catch(() => setError("Error al cargar datos")).finally(() => setLoading(false));
   }, [seasonId, divisionId]);
 
-  if (loading) return <div className="loading">Cargando...</div>;
-  if (!season) return <div className="error">Temporada no encontrada</div>;
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const handleRecalculate = async () => {
+    if (!seasonId) return;
+    setRecalculating(true);
+    try {
+      await standingsApi.recalculate(Number(seasonId), divisionId ? Number(divisionId) : undefined);
+      fetchData();
+    } catch {
+      setError("Error al recalcular posiciones");
+    } finally {
+      setRecalculating(false);
+    }
+  };
+
+  if (loading) return <Loading />;
+  if (error) return <ErrorMessage message={error} onRetry={fetchData} />;
+  if (!season) return <ErrorMessage message="Temporada no encontrada" />;
 
   return (
     <div className="standings-page">
@@ -47,6 +72,18 @@ export default function Standings() {
               {div.name}
             </Link>
           ))}
+        </div>
+      )}
+
+      {canRecalculate && (
+        <div className="page-actions">
+          <button
+            onClick={handleRecalculate}
+            className="btn btn-primary"
+            disabled={recalculating}
+          >
+            {recalculating ? "Recalculando..." : "Recalcular Tabla"}
+          </button>
         </div>
       )}
 
