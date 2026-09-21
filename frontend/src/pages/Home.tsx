@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { seasonsApi, clubsApi, statisticsApi } from "../api";
-import type { SeasonList, Club, TopScorer } from "../types";
+import { seasonsApi, clubsApi, standingsApi, statisticsApi } from "../api";
+import type { SeasonList, Club, Standing, TopScorer } from "../types";
 import Loading from "../components/ui/Loading";
 import ErrorMessage from "../components/ui/ErrorMessage";
+import SectionHeader from "../components/ui/SectionHeader";
 
 export default function Home() {
   const [seasons, setSeasons] = useState<SeasonList[]>([]);
   const [clubs, setClubs] = useState<Club[]>([]);
+  const [standings, setStandings] = useState<Standing[]>([]);
   const [topScorers, setTopScorers] = useState<TopScorer[]>([]);
+  const [topAssists, setTopAssists] = useState<{ player_id: number; nickname: string; assists: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,71 +22,213 @@ export default function Home() {
       seasonsApi.list(),
       clubsApi.list(),
       statisticsApi.topScorers({ limit: 5 }),
-    ]).then(([seasonsRes, clubsRes, scorersRes]) => {
-      setSeasons(seasonsRes.data.results);
-      setClubs(clubsRes.data.results.slice(0, 8));
-      setTopScorers(scorersRes.data);
-    }).catch(() => setError("Error al cargar datos")).finally(() => setLoading(false));
+      statisticsApi.topAssists({ limit: 5 }),
+    ])
+      .then(([seasonsRes, clubsRes, scorersRes, assistsRes]) => {
+        const allSeasons = seasonsRes.data.results;
+        setSeasons(allSeasons);
+        setClubs(clubsRes.data.results.slice(0, 6));
+        setTopScorers(scorersRes.data);
+        setTopAssists(assistsRes.data);
+
+        const finished = allSeasons.find((s) => s.status === "FINISHED");
+        if (finished) {
+          standingsApi
+            .list({ season: finished.id })
+            .then((res) => setStandings(res.data.results || res.data));
+        }
+      })
+      .catch(() => setError("Error al cargar datos"))
+      .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   if (loading) return <Loading />;
   if (error) return <ErrorMessage message={error} onRetry={fetchData} />;
 
+  const featuredSeason = seasons.find((s) => s.status === "FINISHED") || seasons[0];
+  const upcomingSeason = seasons.find((s) => s.status === "UPCOMING");
+
   return (
     <div className="home">
       <section className="hero">
-        <h1>EA FC Clubes Pro</h1>
-        <p>Plataforma de gestion de ligas de Clubes Pro</p>
+        <h1 className="heading-hero">EA FC Clubes Pro</h1>
+        <p className="hero-subtitle">
+          Plataforma de gestion de ligas competitivas de Clubes Pro
+        </p>
       </section>
 
-      <section className="home-section">
-        <h2>Temporadas</h2>
-        <div className="card-grid">
-          {seasons.map((season) => (
-            <Link key={season.id} to={`/standings/${season.id}`} className="card">
-              <h3>{season.name}</h3>
-              <p>{season.league_name}</p>
-              <span className="badge" style={{
-                backgroundColor: season.status === "ACTIVE" ? "#22c55e" : season.status === "FINISHED" ? "#6b7280" : "#94a3b8"
-              }}>
-                {season.status === "ACTIVE" ? "Activa" : season.status === "FINISHED" ? "Finalizada" : "Proxima"}
+      {featuredSeason && (
+        <Link
+          to={`/standings/${featuredSeason.id}`}
+          className="home-hero-banner card-accent-gold"
+          style={{ textDecoration: "none", color: "inherit", display: "flex" }}
+        >
+          <div className="home-hero-info">
+            <span className="text-label">Competicion destacada</span>
+            <h2>
+              {featuredSeason.league_name} — {featuredSeason.name}
+            </h2>
+            <div className="home-hero-meta">
+              <span className={`badge ${featuredSeason.status === "FINISHED" ? "badge-muted" : "badge-green"}`}>
+                {featuredSeason.status === "FINISHED"
+                  ? "Finalizada"
+                  : featuredSeason.status === "ACTIVE"
+                  ? "Activa"
+                  : "Proxima"}
               </span>
-            </Link>
-          ))}
-          {seasons.length === 0 && (
-            <p className="empty">No hay temporadas disponibles</p>
+              {featuredSeason.game_name && (
+                <span className="badge badge-muted">{featuredSeason.game_name}</span>
+              )}
+            </div>
+          </div>
+          <div className="home-hero-stats">
+            <div className="home-hero-stat">
+              <div className="home-hero-stat-value">{standings.length}</div>
+              <div className="home-hero-stat-label">Clubes</div>
+            </div>
+            <div className="home-hero-stat">
+              <div className="home-hero-stat-value">
+                {standings.reduce((acc, s) => acc + s.played, 0) / 2}
+              </div>
+              <div className="home-hero-stat-label">Partidos</div>
+            </div>
+          </div>
+        </Link>
+      )}
+
+      <div className="home-columns">
+        <div>
+          <SectionHeader title="Tabla de posiciones" linkTo={featuredSeason ? `/standings/${featuredSeason.id}` : "/seasons"} linkText="Ver completa" />
+          {standings.length > 0 ? (
+            <div className="top-list">
+              {standings.slice(0, 8).map((s, i) => (
+                <Link
+                  key={s.id}
+                  to={`/clubs/${s.club_season}`}
+                  className="top-item"
+                >
+                  <span className="top-position">{i + 1}</span>
+                  <span className="top-info">
+                    <span className="top-name">{s.club_name}</span>
+                  </span>
+                  <span className="top-value">
+                    {s.points}
+                    <span className="top-value-label">pts</span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="empty">No hay posiciones disponibles</p>
           )}
         </div>
-      </section>
 
-      <section className="home-section">
-        <h2>Clubes</h2>
-        <div className="card-grid">
-          {clubs.map((club) => (
-            <Link key={club.id} to={`/clubs/${club.id}`} className="card">
-              <h3>{club.name}</h3>
-              <p>{club.country_name}</p>
-            </Link>
-          ))}
+        <div>
+          <SectionHeader title="Goleadores" linkTo="/statistics" linkText="Ver ranking" />
+          {topScorers.length > 0 ? (
+            <div className="top-list">
+              {topScorers.map((s, i) => (
+                <Link
+                  key={s.player_id}
+                  to={`/players/${s.player_id}`}
+                  className="top-item"
+                >
+                  <span className="top-position">{i + 1}</span>
+                  <div className="top-avatar">{s.nickname.charAt(0).toUpperCase()}</div>
+                  <span className="top-info">
+                    <span className="top-name">{s.nickname}</span>
+                  </span>
+                  <span className="top-value">
+                    {s.goals}
+                    <span className="top-value-label">goles</span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="empty">No hay goleadores registrados</p>
+          )}
         </div>
-        <Link to="/clubs" className="see-all">Ver todos los clubes</Link>
-      </section>
+      </div>
 
-      <section className="home-section">
-        <h2>Goleadores</h2>
-        <div className="top-list">
-          {topScorers.map((s, i) => (
-            <Link key={s.player_id} to={`/players/${s.player_id}`} className="top-item">
-              <span className="top-position">{i + 1}</span>
-              <span className="top-name">{s.nickname}</span>
-              <span className="top-value">{s.goals} goles</span>
-            </Link>
-          ))}
-          {topScorers.length === 0 && <p className="empty">No hay goleadores registrados</p>}
+      <div className="home-columns">
+        <div>
+          <SectionHeader title="Asistencias" linkTo="/statistics" linkText="Ver ranking" />
+          {topAssists.length > 0 ? (
+            <div className="top-list">
+              {topAssists.map((s, i) => (
+                <Link
+                  key={s.player_id}
+                  to={`/players/${s.player_id}`}
+                  className="top-item"
+                >
+                  <span className="top-position">{i + 1}</span>
+                  <div className="top-avatar">{s.nickname.charAt(0).toUpperCase()}</div>
+                  <span className="top-info">
+                    <span className="top-name">{s.nickname}</span>
+                  </span>
+                  <span className="top-value">
+                    {s.assists}
+                    <span className="top-value-label">asist.</span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="empty">No hay asistencias registradas</p>
+          )}
         </div>
-      </section>
+
+        <div>
+          <SectionHeader title="Clubes" linkTo="/clubs" linkText="Ver todos" />
+          <div className="card-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
+            {clubs.map((club) => (
+              <Link
+                key={club.id}
+                to={`/clubs/${club.id}`}
+                className="club-card"
+              >
+                <div className="club-logo">
+                  {club.logo ? (
+                    <img src={club.logo} alt={club.name} />
+                  ) : (
+                    <span>{club.short_name.charAt(0)}</span>
+                  )}
+                </div>
+                <div className="club-info">
+                  <span className="club-name">{club.name}</span>
+                  <span className="club-country">{club.country_name}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {upcomingSeason && (
+        <SectionHeader
+          title="Proxima temporada"
+          linkTo={`/standings/${upcomingSeason.id}`}
+          linkText="Ver"
+        />
+      )}
+      {upcomingSeason && (
+        <Link
+          to={`/standings/${upcomingSeason.id}`}
+          className="card card-accent"
+          style={{ textDecoration: "none", color: "inherit", display: "block" }}
+        >
+          <h3>{upcomingSeason.name}</h3>
+          <p>{upcomingSeason.league_name}</p>
+          <div style={{ marginTop: "var(--space-2)" }}>
+            <span className="badge badge-accent">Proxima</span>
+          </div>
+        </Link>
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import type { Standing, Season, SeasonList } from "../types";
 import StandingsTable from "../components/ui/StandingsTable";
 import Loading from "../components/ui/Loading";
 import ErrorMessage from "../components/ui/ErrorMessage";
+import Breadcrumb from "../components/ui/Breadcrumb";
 import { useAuth } from "../context/AuthContext";
 
 export default function Standings() {
@@ -12,6 +13,7 @@ export default function Standings() {
   const [standings, setStandings] = useState<Standing[]>([]);
   const [season, setSeason] = useState<Season | null>(null);
   const [allSeasons, setAllSeasons] = useState<SeasonList[]>([]);
+  const [selectedDivision, setSelectedDivision] = useState<string | null>(divisionId || null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [recalculating, setRecalculating] = useState(false);
@@ -21,103 +23,144 @@ export default function Standings() {
 
   const fetchData = useCallback(() => {
     if (!seasonId) {
-      seasonsApi.list().then((res) => {
-        setAllSeasons(res.data.results);
-        setLoading(false);
-      }).catch(() => setError("Error al cargar temporadas")).finally(() => setLoading(false));
+      setLoading(true);
+      seasonsApi
+        .list()
+        .then((res) => setAllSeasons(res.data.results))
+        .catch(() => setError("Error al cargar temporadas"))
+        .finally(() => setLoading(false));
       return;
     }
+
     setLoading(true);
     setError(null);
+
+    const params: { season: number; division?: number } = { season: Number(seasonId) };
+    if (selectedDivision) params.division = Number(selectedDivision);
+
     Promise.all([
       seasonsApi.get(Number(seasonId)),
-      standingsApi.list({ season: Number(seasonId), division: divisionId ? Number(divisionId) : undefined }),
-    ]).then(([seasonRes, standingsRes]) => {
-      setSeason(seasonRes.data);
-      setStandings(standingsRes.data.results);
-    }).catch(() => setError("Error al cargar datos")).finally(() => setLoading(false));
-  }, [seasonId, divisionId]);
+      standingsApi.list(params),
+    ])
+      .then(([seasonRes, standingsRes]) => {
+        setSeason(seasonRes.data);
+        setStandings(standingsRes.data.results || standingsRes.data);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+        if (!selectedDivision && seasonRes.data.divisions?.length > 0) {
+          setSelectedDivision(String(seasonRes.data.divisions[0].id));
+        }
+      })
+      .catch(() => setError("Error al cargar datos"))
+      .finally(() => setLoading(false));
+  }, [seasonId, selectedDivision]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    if (divisionId) setSelectedDivision(divisionId);
+  }, [divisionId]);
 
   const handleRecalculate = async () => {
     if (!seasonId) return;
     setRecalculating(true);
     try {
-      await standingsApi.recalculate(Number(seasonId), divisionId ? Number(divisionId) : undefined);
+      await standingsApi.recalculate(Number(seasonId), selectedDivision ? Number(selectedDivision) : undefined);
       fetchData();
     } catch {
-      setError("Error al recalcular posiciones");
+      setError("Error al recalcular");
     } finally {
       setRecalculating(false);
     }
   };
 
-  if (loading) return <Loading />;
-  if (error) return <ErrorMessage message={error} onRetry={fetchData} />;
-
   if (!seasonId) {
+    if (loading) return <Loading />;
+    if (error) return <ErrorMessage message={error} onRetry={fetchData} />;
+
     return (
-      <div className="standings-page">
-        <h1>Tabla de Posiciones</h1>
-        <p className="empty">Selecciona una temporada para ver la tabla de posiciones</p>
+      <div>
+        <div className="page-header">
+          <h1 className="heading-page">Seleccionar temporada</h1>
+        </div>
         <div className="card-grid">
           {allSeasons.map((s) => (
-            <Link key={s.id} to={`/standings/${s.id}`} className="card">
+            <Link
+              key={s.id}
+              to={`/standings/${s.id}`}
+              className="card"
+              style={{ textDecoration: "none", color: "inherit" }}
+            >
               <h3>{s.name}</h3>
               <p>{s.league_name}</p>
-              <span className="badge">{s.status}</span>
+              <div style={{ marginTop: "var(--space-2)" }}>
+                <span className={`badge ${s.status === "FINISHED" ? "badge-muted" : s.status === "ACTIVE" ? "badge-green" : "badge-accent"}`}>
+                  {s.status === "FINISHED" ? "Finalizada" : s.status === "ACTIVE" ? "Activa" : "Proxima"}
+                </span>
+              </div>
             </Link>
           ))}
         </div>
-        {allSeasons.length === 0 && <p className="empty">No hay temporadas disponibles</p>}
       </div>
     );
   }
 
-  if (!season) return <ErrorMessage message="Temporada no encontrada" />;
+  if (loading) return <Loading />;
+  if (error) return <ErrorMessage message={error} onRetry={fetchData} />;
+
+  const currentDivision = season?.divisions?.find(
+    (d) => String(d.id) === selectedDivision
+  );
 
   return (
-    <div className="standings-page">
-      <div className="page-header">
-        <h1>Tabla de Posiciones</h1>
-        <div className="breadcrumbs">
-          <Link to="/seasons">{season.league_name}</Link>
-          <span>/</span>
-          <span>{season.name}</span>
-        </div>
-      </div>
+    <div>
+      <Breadcrumb
+        items={[
+          { label: "Competiciones", to: "/seasons" },
+          { label: season?.league_name || "", to: `/seasons` },
+          { label: season?.name || "" },
+        ]}
+      />
 
-      {season.divisions.length > 0 && (
-        <div className="division-tabs">
-          {season.divisions.map((div) => (
-            <Link
-              key={div.id}
-              to={`/standings/${seasonId}/${div.id}`}
-              className={`tab ${(!divisionId && div.order === 1) || Number(divisionId) === div.id ? "active" : ""}`}
-            >
-              {div.name}
-            </Link>
-          ))}
+      <div className="standings-header">
+        <div className="standings-competition">
+          <h2 className="heading-page">
+            {season?.league_name} — {season?.name}
+          </h2>
+          {currentDivision && (
+            <span className="badge badge-accent">{currentDivision.name}</span>
+          )}
         </div>
-      )}
-
-      {canRecalculate && (
-        <div className="page-actions">
+        {canRecalculate && (
           <button
             onClick={handleRecalculate}
-            className="btn btn-primary"
+            className="btn btn-sm"
             disabled={recalculating}
           >
-            {recalculating ? "Recalculando..." : "Recalcular Tabla"}
+            {recalculating ? "Recalculando..." : "Recalcular"}
           </button>
+        )}
+      </div>
+
+      {season?.divisions && season.divisions.length > 1 && (
+        <div className="tabs">
+          {season.divisions.map((d) => (
+            <button
+              key={d.id}
+              className={`tab ${String(d.id) === selectedDivision ? "active" : ""}`}
+              onClick={() => setSelectedDivision(String(d.id))}
+            >
+              {d.name}
+            </button>
+          ))}
         </div>
       )}
 
       {standings.length > 0 ? (
         <StandingsTable standings={standings} />
       ) : (
-        <p className="empty">No hay posiciones calculadas para esta division</p>
+        <p className="empty">No hay posiciones para esta division</p>
       )}
     </div>
   );

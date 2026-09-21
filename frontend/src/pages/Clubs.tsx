@@ -4,7 +4,6 @@ import type { Club } from "../types";
 import ClubCard from "../components/ui/ClubCard";
 import Loading from "../components/ui/Loading";
 import ErrorMessage from "../components/ui/ErrorMessage";
-import Pagination from "../components/ui/Pagination";
 import SearchBar from "../components/ui/SearchBar";
 import { useAuth } from "../context/AuthContext";
 
@@ -15,8 +14,6 @@ export default function Clubs() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", short_name: "", country: 1 });
   const [submitting, setSubmitting] = useState(false);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
   const { user } = useAuth();
 
@@ -25,23 +22,16 @@ export default function Clubs() {
   const fetchClubs = useCallback(() => {
     setLoading(true);
     setError(null);
-    clubsApi.list()
-      .then((res) => {
-        let filtered = res.data.results;
-        if (search) {
-          filtered = filtered.filter(c =>
-            c.name.toLowerCase().includes(search.toLowerCase()) ||
-            c.short_name.toLowerCase().includes(search.toLowerCase())
-          );
-        }
-        setClubs(filtered);
-        setTotalPages(Math.max(1, Math.ceil(res.data.count / 25)));
-      })
+    clubsApi
+      .list()
+      .then((res) => setClubs(res.data.results || res.data))
       .catch(() => setError("Error al cargar clubes"))
       .finally(() => setLoading(false));
-  }, [search]);
+  }, []);
 
-  useEffect(() => { fetchClubs(); }, [fetchClubs]);
+  useEffect(() => {
+    fetchClubs();
+  }, [fetchClubs]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,13 +48,20 @@ export default function Clubs() {
     }
   };
 
+  const filtered = clubs.filter((c) =>
+    search
+      ? c.name.toLowerCase().includes(search.toLowerCase()) ||
+        c.short_name.toLowerCase().includes(search.toLowerCase())
+      : true
+  );
+
   if (loading) return <Loading />;
   if (error) return <ErrorMessage message={error} onRetry={fetchClubs} />;
 
   return (
-    <div className="list-page">
+    <div>
       <div className="page-header">
-        <h1>Clubes</h1>
+        <h1 className="heading-page">Clubes</h1>
         {canManage && (
           <button onClick={() => setShowForm(!showForm)} className="btn btn-primary">
             {showForm ? "Cancelar" : "+ Nuevo Club"}
@@ -98,14 +95,12 @@ export default function Clubs() {
       <SearchBar value={search} onChange={setSearch} placeholder="Buscar club..." />
 
       <div className="card-grid">
-        {clubs.map((club) => (
+        {filtered.map((club) => (
           <ClubCard key={club.id} club={club} />
         ))}
       </div>
 
-      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-
-      {clubs.length === 0 && <p className="empty">No se encontraron clubes</p>}
+      {filtered.length === 0 && <p className="empty">No se encontraron clubes</p>}
     </div>
   );
 }

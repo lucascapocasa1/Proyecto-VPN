@@ -4,7 +4,6 @@ import type { Player } from "../types";
 import PlayerCard from "../components/ui/PlayerCard";
 import Loading from "../components/ui/Loading";
 import ErrorMessage from "../components/ui/ErrorMessage";
-import Pagination from "../components/ui/Pagination";
 import SearchBar from "../components/ui/SearchBar";
 import { useAuth } from "../context/AuthContext";
 
@@ -15,8 +14,6 @@ export default function Players() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ nickname: "", platform: "", country: 1 });
   const [submitting, setSubmitting] = useState(false);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
   const { user } = useAuth();
 
@@ -25,22 +22,16 @@ export default function Players() {
   const fetchPlayers = useCallback(() => {
     setLoading(true);
     setError(null);
-    playersApi.list()
-      .then((res) => {
-        let filtered = res.data.results;
-        if (search) {
-          filtered = filtered.filter(p =>
-            p.nickname.toLowerCase().includes(search.toLowerCase())
-          );
-        }
-        setPlayers(filtered);
-        setTotalPages(Math.max(1, Math.ceil(res.data.count / 25)));
-      })
+    playersApi
+      .list()
+      .then((res) => setPlayers(res.data.results || res.data))
       .catch(() => setError("Error al cargar jugadores"))
       .finally(() => setLoading(false));
-  }, [search]);
+  }, []);
 
-  useEffect(() => { fetchPlayers(); }, [fetchPlayers]);
+  useEffect(() => {
+    fetchPlayers();
+  }, [fetchPlayers]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,13 +52,19 @@ export default function Players() {
     }
   };
 
+  const filtered = players.filter((p) =>
+    search
+      ? p.nickname.toLowerCase().includes(search.toLowerCase())
+      : true
+  );
+
   if (loading) return <Loading />;
   if (error) return <ErrorMessage message={error} onRetry={fetchPlayers} />;
 
   return (
-    <div className="list-page">
+    <div>
       <div className="page-header">
-        <h1>Jugadores</h1>
+        <h1 className="heading-page">Jugadores</h1>
         {canManage && (
           <button onClick={() => setShowForm(!showForm)} className="btn btn-primary">
             {showForm ? "Cancelar" : "+ Nuevo Jugador"}
@@ -102,14 +99,12 @@ export default function Players() {
       <SearchBar value={search} onChange={setSearch} placeholder="Buscar jugador..." />
 
       <div className="card-grid">
-        {players.map((player) => (
+        {filtered.map((player) => (
           <PlayerCard key={player.id} player={player} />
         ))}
       </div>
 
-      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-
-      {players.length === 0 && <p className="empty">No se encontraron jugadores</p>}
+      {filtered.length === 0 && <p className="empty">No se encontraron jugadores</p>}
     </div>
   );
 }

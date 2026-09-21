@@ -27,7 +27,11 @@ export default function Login() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1>Ingresar</h1>
+        <div className="login-logo">
+          <span className="logo-icon">&#9917;</span>
+          <h1>EA FC Clubes Pro</h1>
+        </div>
+        <h2>Ingresar</h2>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="username">Usuario</label>
@@ -36,6 +40,7 @@ export default function Login() {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
               required
             />
           </div>
@@ -46,6 +51,7 @@ export default function Login() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
               required
             />
           </div>

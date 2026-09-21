@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { Club } from "../../types";
+import CountryFlag from "./CountryFlag";
 
 interface ClubCardProps {
   club: Club;
@@ -12,12 +13,14 @@ export default function ClubCard({ club }: ClubCardProps) {
         {club.logo ? (
           <img src={club.logo} alt={club.name} />
         ) : (
-          <span className="club-initial">{club.short_name.charAt(0)}</span>
+          <span>{club.short_name.charAt(0)}</span>
         )}
       </div>
       <div className="club-info">
         <span className="club-name">{club.name}</span>
-        <span className="club-country">{club.country_name}</span>
+        <span className="club-country">
+          <CountryFlag code={club.country_name} size="sm" /> {club.country_name}
+        </span>
       </div>
     </Link>
   );
