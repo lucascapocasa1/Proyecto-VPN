@@ -73,6 +73,7 @@ Plataforma web para gestionar ligas competitivas de **EA Sports FC — Clubes Pr
 ### Player
 - `Player.id` = ID interno estable, NUNCA cambia
 - `nickname` = identificador externo, solo admin puede cambiarlo
+- `position` = ARQ/DEF/MED/DEL (opcional, usado para stats realistas)
 - `PlayerIdentityHistory` registra cambios de nickname
 
 ### BOT
@@ -251,13 +252,33 @@ python manage.py test apps.accounts.tests apps.players.tests apps.clubs.tests ap
 
 ## Datos de prueba (seed data)
 
-Seed data disponible via `python manage.py seed_data`:
+Dos scripts de seed disponibles:
+
+### seed_data.py — Dataset completo (~34,000 registros)
+
+```bash
+python manage.py seed_data
+```
+
 - 4 users (superadmin, admin_liga, admin_club, player)
-- 20 clubs (10 por división)
-- 31 players
-- 121 partidos
-- 665 eventos
-- 40 standings
+- 2 countries (Argentina, Uruguay)
+- 40 clubs per country (20 Primera + 20 Segunda)
+- 600 players per country (15 por club, con position)
+- S1 FINISHED: 380 partidos por país (round-robin, 2 divisiones)
+- S2 UPCOMING: sin partidos, solo equipos asignados
+- ~15,000 MatchEvents total
+- 80 standings (recalculados)
+
+### seed_dev.py — Dataset chico (~1,200 registros)
+
+```bash
+python manage.py seed_dev
+```
+
+- 1 country (Argentina)
+- 10 clubs, 60 players
+- S1 FINISHED + S2 UPCOMING
+- ~370 eventos
 
 ---
 

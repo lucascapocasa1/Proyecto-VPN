@@ -212,7 +212,7 @@ Country → League → Season → Division → ClubSeason → Match → MatchPla
 | `Club` | Club (entidad histórica estable) |
 | `ClubSeason` | Participación de un club en una temporada/división |
 | `ClubTitle` | Título otorgado manualmente por un admin |
-| `Player` | Jugador (identidad interna estable) |
+| `Player` | Jugador (identidad interna estable, con position ARQ/DEF/MED/DEL) |
 | `PlayerIdentityHistory` | Historial de nicknames |
 | `PlayerClubHistory` | Historial de clubes del jugador |
 | `Matchday` | Jornada dentro de una temporada/división |
@@ -318,7 +318,8 @@ POST /api/standings/recalculate/   {"season_id": 1, "division_id": 1}
 python manage.py recalculate_standings --season 1 --division 1
 python manage.py recalculate_standings --all
 python manage.py generate_fixtures --season 1 --division 1
-python manage.py seed_data
+python manage.py seed_data        # Dataset completo (~34K registros, 2 países)
+python manage.py seed_dev         # Dataset chico (~1.2K registros, 1 país)
 ```
 
 ---
@@ -330,7 +331,7 @@ python manage.py seed_data
 cd backend
 pip install -r requirements.txt
 python manage.py migrate
-python manage.py seed_data
+python manage.py seed_data        # O seed_dev para desarrollo rápido
 python manage.py createsuperuser
 python manage.py runserver
 

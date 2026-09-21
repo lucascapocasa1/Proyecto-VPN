@@ -66,29 +66,35 @@ Liga
 | MED | 0.12 | 0.15 | 4-8 | 0-1 |
 | DEL | 0.35 | 0.08 | 3-6 | 0-1 |
 
-### Volumen final (2 paises)
+### Volumen final (2 paises, S1 FINISHED + S2 UPCOMING)
 
 | Entidad | Argentina | Uruguay | Total |
 |---------|-----------|---------|-------|
 | Countries | 1 | 1 | 2 |
 | Leagues | 1 | 1 | 2 |
-| Seasons | 3 | 3 | 6 |
-| Divisions | 6 | 6 | 12 |
+| Seasons | 2 | 2 | 4 |
+| Divisions | 4 | 4 | 8 |
 | Clubs | 40 | 40 | 80 |
+| ClubSeasons | 80 | 80 | 160 |
 | Players | 600 | 600 | 1,200 |
-| Matches (S1+S2) | 380 | 380 | 760 |
-| MatchPlayers | 8,360 | 8,360 | 16,720 |
-| MatchEvents | ~3,800 | ~3,800 | ~7,600 |
+| PlayerClubHistory | 1,200 | 1,200 | 2,400 |
+| Matchdays | 38 | 38 | 76 |
+| Matches (S1) | 380 | 380 | 760 |
+| MatchPlayers | 11,400 | 11,400 | 22,800 |
+| MatchEvents | ~7,500 | ~7,500 | ~15,000 |
+| Standings | 40 | 40 | 80 |
+| **Total** | | | **~34,354** |
 
-### Archivos a crear/modificar
+### Archivos creados/modificados
 
-- `apps/standings/management/commands/seed_data.py` — Reescribir completamente (dataset grande)
-- `apps/standings/management/commands/seed_dev.py` — Crear nuevo (dataset chico para dev)
-- `apps/standings/zones.py` — Revisar zona PROMOTION para Primera
+- `apps/players/models.py` — Campo `position` agregado (ARQ/DEF/MED/DEL)
+- `apps/players/migrations/0002_player_position.py` — Migración creada
+- `apps/standings/management/commands/seed_data.py` — Reescrito (dataset completo)
+- `apps/standings/management/commands/seed_dev.py` — Creado (dataset chico para dev)
 
 ### Estado
 
-Pendiente — no implementar sin autorizacion
+✅ Implementado y verificado
 
 ---
 

@@ -1,4 +1,5 @@
 import random
+import itertools
 from datetime import timedelta
 from django.utils import timezone
 from django.core.management.base import BaseCommand
@@ -11,507 +12,342 @@ from apps.standings.models import Standing
 from apps.standings.services import recalculate_standings
 
 
+CLUB_NAMES_ARG = [
+    ("Buenos Aires FC", "BAFC"), ("Rosario United", "RUFC"),
+    ("Córdoba Pro", "CDPR"), ("Patagonia FC", "PAFC"),
+    ("Mendoza City", "MZFC"), ("Santa Fe SC", "SFSC"),
+    ("Tucumán Town", "TCTN"), ("Salta Sport", "SALT"),
+    ("Entre Ríos FC", "ERFC"), ("Chaco United", "CHUN"),
+    ("La Plata FC", "LPFC"), ("Mar del Plata MDQ", "MDPL"),
+    ("San Juan FC", "SJFC"), ("Santiago Est.", "SSET"),
+    ("Corrientes AC", "CRAC"), ("Neuquén FC", "NQFC"),
+    ("Formosa United", "FMUN"), ("San Luis Pro", "SLPR"),
+    ("Catamarca FC", "CMFC"), ("Jujuy City", "JJCY"),
+    ("Villa María VC", "VMMC"), ("Río Cuarto FC", "RCFC"),
+    ("Concepción FC", "CCFC"), ("Resistencia RC", "RESI"),
+    ("Posadas FC", "POFC"), ("Rawson WR", "RAWS"),
+    ("Bahía Blanca BB", "BBFC"), ("Junín FC", "JUFC"),
+    ("Pergamino PG", "PGFC"), ("Olavarría OV", "OVFC"),
+    ("Zárate ZR", "ZRFC"), ("Lobos LB", "LBFC"),
+    ("Chivilcoy CH", "CHFC"), ("Bragado BG", "BGFC"),
+    ("25 de Mayo FM", "FMDM"), ("General Roca GR", "GRFC"),
+    ("Cipolletti CI", "CIFC"), ("Viedma VD", "VDFC"),
+    ("Bariloche BR", "BRFC"), ("Comodoro CD", "CDFC"),
+]
+
+CLUB_NAMES_URY = [
+    ("Montevideo FC", "MVFC"), ("Nacional UY", "NACU"),
+    ("Peñarol UY", "PENU"), ("Danubio FC", "DANU"),
+    ("Defensor SC", "DEFU"), ("Wanderers FC", "WAND"),
+    ("Cerro Largo CL", "CLFC"), ("Liverpool UY", "LIUY"),
+    ("Plaza Colonia PC", "PLCO"), ("Rentistas FC", "RENT"),
+    ("Boston River BR", "BURI"), ("Fénix FC", "FENI"),
+    ("Miramar FC", "MIRA"), ("Progreso FC", "PROG"),
+    ("Racing UY", "RACU"), ("Suites FC", "SUIF"),
+    ("Artigas FC", "ARTI"), ("Durazno FC", "DURF"),
+    ("Maldonado FC", "MALF"), ("Paysandú FC", "PAFC"),
+    ("River Plate UY", "RPUY"), ("Colón FC", "COLU"),
+    ("San Carlos FC", "SCFC"), ("Tacuarembó FC", "TACF"),
+    ("Cerro FC", "CERU"), ("Urreta FC", "URRE"),
+    ("Juventud UY", "JUUU"), ("Villa Española VE", "VESP"),
+    ("Albión FC", "ALBI"), ("Bella Vista BV", "BVFC"),
+    ("Deportivo MVD", "DPMV"), ("Huracán FC", "HURU"),
+    ("Mar de Fondo MF", "MDFF"), ("Oriental FC", "ORIE"),
+    ("Parque FC", "PARF"), ("Solís FC", "SOLF"),
+    ("Villa Teresa VT", "VITE"), ("Atenas FC", "ATEN"),
+    ("Malvín FC", "MALF"), ("Sayago FC", "SAYF"),
+]
+
+POSITIONS = ["ARQ"] * 2 + ["DEF"] * 4 + ["MED"] * 5 + ["DEL"] * 4
+PLATFORMS = ["PLAYSTATION", "XBOX", "PC"]
+
+
 class Command(BaseCommand):
-    help = "Create seed data for testing"
+    help = "Create full seed data: 2 countries, 2 seasons each, ~26K records"
 
     def handle(self, *args, **options):
-        self.stdout.write("Creating seed data...")
+        random.seed(42)
+        self.stdout.write("Creating full seed data (2 countries)...")
 
         self._create_users()
-        self._create_countries_and_games()
-        self._create_leagues_and_formats()
-        self._create_seasons_and_divisions()
-        self._create_clubs()
-        self._create_players()
-        self._create_season1_data()
-        self._create_season2_data()
+        self._create_shared_infra()
 
-        self.stdout.write(self.style.SUCCESS("Seed data created successfully!"))
+        self.argentina = self._create_country("Argentina", "AR")
+        self._populate_country(self.argentina, CLUB_NAMES_ARG, "Liga Argentina")
+
+        self.uruguay = self._create_country("Uruguay", "UY")
+        self._populate_country(self.uruguay, CLUB_NAMES_URY, "Liga Uruguaya")
+
+        self.stdout.write(self.style.SUCCESS("Full seed data created successfully!"))
 
     def _create_users(self):
         self.stdout.write("  Creating users...")
-
         self.superadmin = User.objects.create_superuser(
-            username="admin",
-            email="admin@test.com",
-            password="admin123",
-            role=User.Role.SUPERADMIN,
+            username="admin", email="admin@test.com",
+            password="admin123", role=User.Role.SUPERADMIN,
         )
-
         self.admin_liga = User.objects.create_user(
-            username="admin_liga",
-            email="admin_liga@test.com",
-            password="admin123",
-            role=User.Role.ADMIN_LIGA,
+            username="admin_liga", email="admin_liga@test.com",
+            password="admin123", role=User.Role.ADMIN_LIGA,
         )
-
         self.admin_club = User.objects.create_user(
-            username="admin_club",
-            email="admin_club@test.com",
-            password="admin123",
-            role=User.Role.ADMIN_CLUB,
+            username="admin_club", email="admin_club@test.com",
+            password="admin123", role=User.Role.ADMIN_CLUB,
         )
-
         self.player_user = User.objects.create_user(
-            username="player1",
-            email="player1@test.com",
-            password="admin123",
-            role=User.Role.PLAYER,
+            username="player1", email="player1@test.com",
+            password="admin123", role=User.Role.PLAYER,
         )
 
-    def _create_countries_and_games(self):
-        self.stdout.write("  Creating countries and games...")
-
-        self.argentina = Country.objects.create(name="Argentina", code="AR")
-        self.uruguay = Country.objects.create(name="Uruguay", code="UY")
-
+    def _create_shared_infra(self):
+        self.stdout.write("  Creating shared infrastructure...")
         self.ea_fc_26 = Game.objects.create(name="EA FC 26", year=2026)
         self.ea_fc_27 = Game.objects.create(name="EA FC 27", year=2027)
-
-    def _create_leagues_and_formats(self):
-        self.stdout.write("  Creating leagues and formats...")
-
-        self.liga_format = CompetitionFormat.objects.create(
-            name="Liga Doble",
-            format_type=CompetitionFormat.FormatType.DOUBLE_ROUND_ROBIN,
+        self.rr_format = CompetitionFormat.objects.create(
+            name="Liga Round Robin",
+            format_type=CompetitionFormat.FormatType.ROUND_ROBIN,
             has_playoffs=False,
         )
 
-        self.copa_format = CompetitionFormat.objects.create(
-            name="Copa - Grupos + Eliminación",
-            format_type=CompetitionFormat.FormatType.CUSTOM,
-            has_playoffs=True,
+    def _create_country(self, name, code):
+        self.stdout.write(f"\n  === {name} ===")
+        return Country.objects.create(name=name, code=code)
+
+    def _populate_country(self, country, club_names, league_name):
+        league = League.objects.create(name=league_name, country=country)
+
+        season1 = Season.objects.create(
+            name="Temporada 1", league=league, game=self.ea_fc_26,
+            number=1, format=self.rr_format, status=Season.Status.FINISHED,
+        )
+        season2 = Season.objects.create(
+            name="Temporada 2", league=league, game=self.ea_fc_26,
+            number=2, format=self.rr_format, status=Season.Status.UPCOMING,
         )
 
-        self.liga_argentina = League.objects.create(
-            name="Liga Argentina",
-            country=self.argentina,
-        )
-
-        self.liga_uruguay = League.objects.create(
-            name="Liga Uruguaya",
-            country=self.uruguay,
-        )
-
-    def _create_seasons_and_divisions(self):
-        self.stdout.write("  Creating seasons and divisions...")
-
-        self.season1 = Season.objects.create(
-            name="Temporada 1",
-            league=self.liga_argentina,
-            game=self.ea_fc_26,
-            number=1,
-            format=self.liga_format,
-            status=Season.Status.FINISHED,
-        )
-
-        self.primera_s1 = Division.objects.create(
-            name="Primera División",
-            season=self.season1,
-            order=1,
-            max_clubs=20,
+        primera_s1 = Division.objects.create(
+            name="Primera División", season=season1, order=1, max_clubs=20,
             has_relegation=True,
-            relegation_zone_start=18,
-            relegation_zone_end=20,
+            relegation_zone_start=19, relegation_zone_end=20,
         )
-
-        self.segunda_s1 = Division.objects.create(
-            name="Segunda División",
-            season=self.season1,
-            order=2,
-            max_clubs=20,
+        segunda_s1 = Division.objects.create(
+            name="Segunda División", season=season1, order=2, max_clubs=20,
             has_relegation=True,
-            playoff_zone_start=2,
-            playoff_zone_end=9,
-            promotion_zone_start=1,
-            promotion_zone_end=1,
-            relegation_zone_start=18,
-            relegation_zone_end=20,
+            playoff_zone_start=2, playoff_zone_end=9,
+            promotion_zone_start=1, promotion_zone_end=1,
+            relegation_zone_start=19, relegation_zone_end=20,
         )
-
-        self.season2 = Season.objects.create(
-            name="Temporada 2",
-            league=self.liga_argentina,
-            game=self.ea_fc_26,
-            number=2,
-            format=self.liga_format,
-            status=Season.Status.ACTIVE,
-        )
-
-        self.primera_s2 = Division.objects.create(
-            name="Primera División",
-            season=self.season2,
-            order=1,
-            max_clubs=20,
+        primera_s2 = Division.objects.create(
+            name="Primera División", season=season2, order=1, max_clubs=20,
             has_relegation=True,
-            relegation_zone_start=18,
-            relegation_zone_end=20,
+            relegation_zone_start=19, relegation_zone_end=20,
         )
-
-        self.segunda_s2 = Division.objects.create(
-            name="Segunda División",
-            season=self.season2,
-            order=2,
-            max_clubs=20,
+        segunda_s2 = Division.objects.create(
+            name="Segunda División", season=season2, order=2, max_clubs=20,
             has_relegation=True,
-            playoff_zone_start=2,
-            playoff_zone_end=9,
-            promotion_zone_start=1,
-            promotion_zone_end=1,
-            relegation_zone_start=18,
-            relegation_zone_end=20,
+            playoff_zone_start=2, playoff_zone_end=9,
+            promotion_zone_start=1, promotion_zone_end=1,
+            relegation_zone_start=19, relegation_zone_end=20,
         )
 
-    def _create_clubs(self):
-        self.stdout.write("  Creating clubs...")
+        clubs = []
+        for name, short in club_names:
+            club = Club.objects.create(name=name, short_name=short, country=country)
+            clubs.append(club)
 
-        club_names = [
-            ("Buenos Aires FC", "BAFC"),
-            ("Rosario United", "RUFC"),
-            ("Córdoba Pro", "CDPR"),
-            ("Patagonia FC", "PAFC"),
-            ("Mendoza City", "MZFC"),
-            ("Santa Fe SC", "SFSC"),
-            ("Tucumán Town", "TCTN"),
-            ("Salta Sport", "SALT"),
-            ("Entre Ríos FC", "ERFC"),
-            ("Chaco United", "CHUN"),
-            ("La Plata FC", "LPFC"),
-            ("Mar del Plata", "MDPL"),
-            ("San Juan FC", "SJFC"),
-            ("Santiago Est.", "SSET"),
-            ("Corrientes AC", "CRAC"),
-            ("Neuquén FC", "NQFC"),
-            ("Formosa United", "FMUN"),
-            ("San Luis Pro", "SLPR"),
-            ("Catamarca FC", "CMFC"),
-            ("Jujuy City", "JJCY"),
-        ]
+        clubs_primera = clubs[:20]
+        clubs_segunda = clubs[20:40]
 
-        self.clubs = []
-        for name, short_name in club_names:
-            club = Club.objects.create(
-                name=name,
-                short_name=short_name,
-                country=self.argentina,
-            )
-            self.clubs.append(club)
+        players = []
+        for ci, club in enumerate(clubs):
+            for pi, pos in enumerate(POSITIONS):
+                player = Player.objects.create(
+                    nickname=f"{country.code.lower()}_{ci}_{pi}_{pos.lower()}",
+                    platform=random.choice(PLATFORMS),
+                    country=country,
+                    position=pos,
+                )
+                players.append(player)
 
-    def _create_players(self):
-        self.stdout.write("  Creating players...")
+        self.stdout.write(f"    {len(clubs)} clubs, {len(players)} players")
 
-        player_data = [
-            ("lucaspro10", "PLAYSTATION"),
-            ("mati10", "XBOX"),
-            ("proplayer99", "PC"),
-            ("facu_fc", "PLAYSTATION"),
-            ("pepe_goals", "XBOX"),
-            ("carlos_assist", "PC"),
-            ("diego_mvp", "PLAYSTATION"),
-            ("fernando_def", "XBOX"),
-            ("gabi_mid", "PC"),
-            ("hector_gk", "PLAYSTATION"),
-            ("ivan_wing", "XBOX"),
-            ("julian_striker", "PC"),
-            ("kevin_cb", "PLAYSTATION"),
-            ("leo_right", "XBOX"),
-            ("marco_left", "PC"),
-            ("nico_str", "PLAYSTATION"),
-            ("oscar_cam", "XBOX"),
-            ("pablo_vol", "PC"),
-            ("raul_att", "PLAYSTATION"),
-            ("sergio_mid", "XBOX"),
-            ("tomas_def", "PC"),
-            ("ulises_gk", "PLAYSTATION"),
-            ("victor_wing", "XBOX"),
-            ("walter_striker", "PC"),
-            ("xavier_cb", "PLAYSTATION"),
-            ("yuri_right", "XBOX"),
-            ("zeta_left", "PC"),
-            ("bot_sergio", None),
-            ("bot_pedro", None),
-            ("bot_jorge", None),
-        ]
+        cs_s1_primera, cs_s1_segunda = [], []
+        for club in clubs_primera:
+            cs = ClubSeason.objects.create(club=club, season=season1, division=primera_s1)
+            cs_s1_primera.append(cs)
+        for club in clubs_segunda:
+            cs = ClubSeason.objects.create(club=club, season=season1, division=segunda_s1)
+            cs_s1_segunda.append(cs)
 
-        self.players = []
-        for nickname, platform in player_data:
-            player = Player.objects.create(
-                nickname=nickname,
-                platform=platform,
-                country=self.argentina,
-            )
-            self.players.append(player)
+        cs_s2_primera, cs_s2_segunda = [], []
+        for club in clubs_primera:
+            cs = ClubSeason.objects.create(club=club, season=season2, division=primera_s2)
+            cs_s2_primera.append(cs)
+        for club in clubs_segunda:
+            cs = ClubSeason.objects.create(club=club, season=season2, division=segunda_s2)
+            cs_s2_segunda.append(cs)
 
-        Player.objects.create(
-            nickname="lucaspro10_v2",
-            platform="PC",
-            country=self.argentina,
-        )
+        all_cs_s1 = cs_s1_primera + cs_s1_segunda
+        for cs in all_cs_s1:
+            club_idx = clubs.index(cs.club)
+            club_players = players[club_idx * 15:(club_idx + 1) * 15]
+            for p in club_players:
+                PlayerClubHistory.objects.create(
+                    player=p, club_season=cs,
+                    joined_at=timezone.now() - timedelta(days=180),
+                    left_at=timezone.now() - timedelta(days=30),
+                )
 
-        PlayerIdentityHistory.objects.create(
-            player=self.players[0],
-            nickname="lucaspro10_old",
-            changed_at=timezone.now() - timedelta(days=30),
-            changed_by=self.superadmin,
-            reason="Cambio de nickname",
-        )
+        all_cs_s2 = cs_s2_primera + cs_s2_segunda
+        for cs in all_cs_s2:
+            club_idx = clubs.index(cs.club)
+            club_players = players[club_idx * 15:(club_idx + 1) * 15]
+            for p in club_players:
+                PlayerClubHistory.objects.create(
+                    player=p, club_season=cs,
+                    joined_at=timezone.now() + timedelta(days=30),
+                )
 
-    def _create_season1_data(self):
-        self.stdout.write("  Creating Season 1 data...")
-
-        club_seasons_s1_primera = []
-        for club in self.clubs[:10]:
-            cs = ClubSeason.objects.create(
-                club=club,
-                season=self.season1,
-                division=self.primera_s1,
-            )
-            club_seasons_s1_primera.append(cs)
-
-        club_seasons_s1_segunda = []
-        for club in self.clubs[10:20]:
-            cs = ClubSeason.objects.create(
-                club=club,
-                season=self.season1,
-                division=self.segunda_s1,
-            )
-            club_seasons_s1_segunda.append(cs)
-
+        self.stdout.write(f"    S1: creating matches for Primera + Segunda...")
         self._create_matches_for_division(
-            self.season1,
-            self.primera_s1,
-            club_seasons_s1_primera,
-            finished=True,
+            season1, primera_s1, cs_s1_primera, players, clubs, finished=True,
         )
-
         self._create_matches_for_division(
-            self.season1,
-            self.segunda_s1,
-            club_seasons_s1_segunda,
-            finished=True,
+            season1, segunda_s1, cs_s1_segunda, players, clubs, finished=True,
         )
 
-        recalculate_standings(self.season1, self.primera_s1)
-        recalculate_standings(self.season1, self.segunda_s1)
+        recalculate_standings(season1, primera_s1)
+        recalculate_standings(season1, segunda_s1)
 
         ClubTitle.objects.create(
-            club=self.clubs[0],
-            season=self.season1,
-            division=self.primera_s1,
+            club=clubs_primera[0], season=season1, division=primera_s1,
             title_type=ClubTitle.TitleType.CHAMPION,
-            name="Campeón Liga Argentina Temporada 1",
+            name=f"Campeón {league_name} Temporada 1",
             awarded_at=timezone.now() - timedelta(days=15),
             awarded_by=self.superadmin,
         )
 
-    def _create_season2_data(self):
-        self.stdout.write("  Creating Season 2 data...")
+        self.stdout.write(f"    S2: UPCOMING, no matches")
 
-        club_seasons_s2 = []
-        for club in self.clubs[:20]:
-            cs = ClubSeason.objects.create(
-                club=club,
-                season=self.season2,
-                division=self.primera_s2,
-            )
-            club_seasons_s2.append(cs)
+    def _create_matches_for_division(self, season, division, club_seasons, players, clubs, finished=True):
+        pairs = list(itertools.combinations(club_seasons, 2))
+        random.shuffle(pairs)
 
-        self._create_matches_for_division(
-            self.season2,
-            self.primera_s2,
-            club_seasons_s2[:10],
-            finished=False,
-            scheduled_count=5,
-        )
-
-        recalculate_standings(self.season2, self.primera_s2)
-
-    def _create_matches_for_division(self, season, division, club_seasons, finished=True, scheduled_count=0):
-        self.stdout.write(f"    Creating matches for {division.name}...")
+        matchdays_needed = 19
+        pairs_per_matchday = len(pairs) // matchdays_needed
 
         matches_created = 0
         events_created = 0
 
-        import itertools
-        pairs = list(itertools.combinations(club_seasons, 2))
-        random.shuffle(pairs)
-
-        matchdays_needed = min(len(pairs), 19 if finished else scheduled_count)
-        pairs_per_matchday = len(pairs) // max(matchdays_needed, 1)
-
         for matchday_num in range(1, matchdays_needed + 1):
             matchday = Matchday.objects.create(
-                season=season,
-                division=division,
-                number=matchday_num,
-                name=f"Jornada {matchday_num}",
+                season=season, division=division,
+                number=matchday_num, name=f"Jornada {matchday_num}",
                 date=timezone.now().date() + timedelta(days=matchday_num * 7),
             )
 
-            start_idx = (matchday_num - 1) * pairs_per_matchday
-            end_idx = start_idx + pairs_per_matchday
-            matchday_pairs = pairs[start_idx:end_idx]
+            start = (matchday_num - 1) * pairs_per_matchday
+            batch = pairs[start:start + pairs_per_matchday]
 
-            for home_cs, away_cs in matchday_pairs:
-                match_status = Match.Status.FINISHED if finished else Match.Status.SCHEDULED
-                home_goals = random.randint(0, 4) if finished else None
-                away_goals = random.randint(0, 3) if finished else None
-
+            for home_cs, away_cs in batch:
+                home_goals = random.randint(0, 4)
+                away_goals = random.randint(0, 3)
                 match = Match.objects.create(
-                    season=season,
-                    division=division,
-                    matchday=matchday,
-                    home_club_season=home_cs,
-                    away_club_season=away_cs,
-                    home_goals=home_goals,
-                    away_goals=away_goals,
-                    status=match_status,
-                    date=matchday.date,
+                    season=season, division=division, matchday=matchday,
+                    home_club_season=home_cs, away_club_season=away_cs,
+                    home_goals=home_goals, away_goals=away_goals,
+                    status=Match.Status.FINISHED, date=matchday.date,
                 )
                 matches_created += 1
+                events_created += self._create_match_events(match, home_cs, away_cs, players, clubs)
 
-                if finished:
-                    events_created += self._create_match_events(match, home_cs, away_cs)
+        self.stdout.write(f"      {division.name}: {matches_created} matches, {events_created} events")
 
-        self.stdout.write(
-            f"      {matches_created} matches, {events_created} events"
-        )
-
-    def _create_match_events(self, match, home_cs, away_cs):
+    def _create_match_events(self, match, home_cs, away_cs, players, clubs):
         events_count = 0
+        used_minutes = set()
 
-        home_players = self.players[:6]
-        away_players = self.players[6:12]
+        def _pick_minute():
+            m = random.randint(1, 90)
+            while m in used_minutes:
+                m = random.randint(1, 90)
+            used_minutes.add(m)
+            return m
 
-        home_match_players = []
-        away_match_players = []
+        home_idx = clubs.index(home_cs.club) * 15
+        away_idx = clubs.index(away_cs.club) * 15
+        home_players = players[home_idx:home_idx + 15]
+        away_players = players[away_idx:away_idx + 15]
 
-        for i, player in enumerate(home_players):
+        home_mps, away_mps = [], []
+        for p in home_players:
             mp = MatchPlayer.objects.create(
-                match=match,
-                player=player,
-                club_season=home_cs,
-                display_name=player.nickname,
-                is_starter=i < 11,
+                match=match, player=p, club_season=home_cs,
+                display_name=p.nickname, is_starter=True,
             )
-            home_match_players.append(mp)
+            home_mps.append(mp)
+            events_count += 1
+        for p in away_players:
+            mp = MatchPlayer.objects.create(
+                match=match, player=p, club_season=away_cs,
+                display_name=p.nickname, is_starter=True,
+            )
+            away_mps.append(mp)
             events_count += 1
 
-        for i in range(11 - len(home_players)):
-            mp = MatchPlayer.objects.create(
-                match=match,
-                player=None,
-                club_season=home_cs,
-                display_name="BOT",
-                is_starter=False,
-            )
-            home_match_players.append(mp)
-            events_count += 1
-
-        for i, player in enumerate(away_players):
-            mp = MatchPlayer.objects.create(
-                match=match,
-                player=player,
-                club_season=away_cs,
-                display_name=player.nickname,
-                is_starter=i < 11,
-            )
-            away_match_players.append(mp)
-            events_count += 1
-
-        for i in range(11 - len(away_players)):
-            mp = MatchPlayer.objects.create(
-                match=match,
-                player=None,
-                club_season=away_cs,
-                display_name="BOT",
-                is_starter=False,
-            )
-            away_match_players.append(mp)
-            events_count += 1
-
-        if match.home_goals and match.home_goals > 0:
-            for _ in range(match.home_goals):
-                scorer = random.choice([mp for mp in home_match_players if mp.player])
-                minute = random.randint(1, 90)
+        for team_mps, goals in [(home_mps, match.home_goals), (away_mps, match.away_goals)]:
+            for _ in range(goals or 0):
+                real_players = [mp for mp in team_mps if mp.player]
+                if not real_players:
+                    continue
+                scorer = random.choice(real_players)
+                minute = _pick_minute()
                 MatchEvent.objects.create(
-                    match=match,
-                    match_player=scorer,
-                    event_type=MatchEvent.EventType.GOAL,
-                    minute=minute,
+                    match=match, match_player=scorer,
+                    event_type=MatchEvent.EventType.GOAL, minute=minute,
                 )
                 events_count += 1
-
                 if random.random() < 0.7:
-                    assister = random.choice(
-                        [mp for mp in home_match_players if mp.player and mp != scorer]
-                    )
-                    MatchEvent.objects.create(
-                        match=match,
-                        match_player=assister,
-                        event_type=MatchEvent.EventType.ASSIST,
-                        minute=minute,
-                    )
-                    events_count += 1
-
-        if match.away_goals and match.away_goals > 0:
-            for _ in range(match.away_goals):
-                scorer = random.choice([mp for mp in away_match_players if mp.player])
-                minute = random.randint(1, 90)
-                MatchEvent.objects.create(
-                    match=match,
-                    match_player=scorer,
-                    event_type=MatchEvent.EventType.GOAL,
-                    minute=minute,
-                )
-                events_count += 1
-
-                if random.random() < 0.7:
-                    assister = random.choice(
-                        [mp for mp in away_match_players if mp.player and mp != scorer]
-                    )
-                    MatchEvent.objects.create(
-                        match=match,
-                        match_player=assister,
-                        event_type=MatchEvent.EventType.ASSIST,
-                        minute=minute,
-                    )
-                    events_count += 1
+                    others = [mp for mp in real_players if mp != scorer]
+                    if others:
+                        assister = random.choice(others)
+                        MatchEvent.objects.create(
+                            match=match, match_player=assister,
+                            event_type=MatchEvent.EventType.ASSIST, minute=minute,
+                        )
+                        events_count += 1
 
         if random.random() < 0.3:
-            own_goal_team = random.choice([home_match_players, away_match_players])
-            own_goal_mp = random.choice([mp for mp in own_goal_team if mp.player])
+            team = random.choice([home_mps, away_mps])
+            real = [mp for mp in team if mp.player]
+            if real:
+                MatchEvent.objects.create(
+                    match=match, match_player=random.choice(real),
+                    event_type=MatchEvent.EventType.OWN_GOAL, minute=_pick_minute(),
+                )
+                events_count += 1
+
+        for _ in range(random.randint(0, 3)):
+            team = random.choice([home_mps, away_mps])
+            real = [mp for mp in team if mp.player]
+            if real:
+                MatchEvent.objects.create(
+                    match=match, match_player=random.choice(real),
+                    event_type=random.choice([
+                        MatchEvent.EventType.YELLOW_CARD,
+                        MatchEvent.EventType.RED_CARD,
+                    ]),
+                    minute=_pick_minute(),
+                )
+                events_count += 1
+
+        mvp_team = random.choice([home_mps, away_mps])
+        real = [mp for mp in mvp_team if mp.player]
+        if real:
             MatchEvent.objects.create(
-                match=match,
-                match_player=own_goal_mp,
-                event_type=MatchEvent.EventType.OWN_GOAL,
-                minute=random.randint(1, 90),
+                match=match, match_player=random.choice(real),
+                event_type=MatchEvent.EventType.MVP, minute=90,
             )
             events_count += 1
-
-        for _ in range(random.randint(0, 4)):
-            team = random.choice([home_match_players, away_match_players])
-            card_mp = random.choice([mp for mp in team if mp.player])
-            event_type = random.choice([
-                MatchEvent.EventType.YELLOW_CARD,
-                MatchEvent.EventType.RED_CARD,
-            ])
-            MatchEvent.objects.create(
-                match=match,
-                match_player=card_mp,
-                event_type=event_type,
-                minute=random.randint(1, 90),
-            )
-            events_count += 1
-
-        mvp_team = random.choice([home_match_players, away_match_players])
-        mvp_mp = random.choice([mp for mp in mvp_team if mp.player])
-        MatchEvent.objects.create(
-            match=match,
-            match_player=mvp_mp,
-            event_type=MatchEvent.EventType.MVP,
-            minute=90,
-        )
-        events_count += 1
 
         return events_count

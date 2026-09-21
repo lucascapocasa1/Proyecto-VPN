@@ -9,10 +9,22 @@ class Player(models.Model):
         XBOX = "XBOX", "Xbox"
         PC = "PC", "PC"
 
+    class Position(models.TextChoices):
+        ARQ = "ARQ", "Arquero"
+        DEF = "DEF", "Defensor"
+        MED = "MED", "Mediocampista"
+        DEL = "DEL", "Delantero"
+
     nickname = models.CharField(max_length=50, unique=True)
     platform = models.CharField(
         max_length=20,
         choices=Platform.choices,
+        blank=True,
+        null=True,
+    )
+    position = models.CharField(
+        max_length=3,
+        choices=Position.choices,
         blank=True,
         null=True,
     )
