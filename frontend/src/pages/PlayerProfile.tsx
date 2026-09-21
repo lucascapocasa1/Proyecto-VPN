@@ -35,12 +35,23 @@ interface PlayerStats {
   yellow_cards?: number;
   red_cards?: number;
   matches_played?: number;
+  own_goals?: number;
 }
+
+const INITIAL_STATS: PlayerStats = {
+  goals: 0,
+  assists: 0,
+  mvp_count: 0,
+  yellow_cards: 0,
+  red_cards: 0,
+  matches_played: 0,
+  own_goals: 0,
+};
 
 export default function PlayerProfile() {
   const { id } = useParams<{ id: string }>();
   const [player, setPlayer] = useState<PlayerDetail | null>(null);
-  const [stats, setStats] = useState<PlayerStats>({});
+  const [stats, setStats] = useState<PlayerStats>(INITIAL_STATS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,10 +63,22 @@ export default function PlayerProfile() {
     Promise.all([
       playersApi.get(Number(id)),
       statisticsApi.player(Number(id)).catch(() => ({ data: {} })),
+      statisticsApi.playerHistory(Number(id)).catch(() => ({ data: { history: [] } })),
     ])
-      .then(([playerRes, statsRes]) => {
+      .then(([playerRes, statsRes, historyRes]) => {
         setPlayer(playerRes.data);
-        setStats(statsRes.data);
+        const raw = statsRes.data?.stats || statsRes.data || {};
+        const historySeasons = historyRes.data?.history || [];
+        const matchesPlayed = historySeasons.length || raw.matches_played || 0;
+        setStats({
+          goals: raw.goals || 0,
+          assists: raw.assists || 0,
+          mvp_count: raw.mvp || raw.mvp_count || 0,
+          yellow_cards: raw.yellow_cards || 0,
+          red_cards: raw.red_cards || 0,
+          matches_played: matchesPlayed,
+          own_goals: raw.own_goals || 0,
+        });
       })
       .catch(() => setError("Error al cargar jugador"))
       .finally(() => setLoading(false));
@@ -133,7 +156,7 @@ export default function PlayerProfile() {
           </div>
           <div className="stat-card">
             <span className="stat-value">{stats.matches_played || 0}</span>
-            <span className="stat-label">Partidos</span>
+            <span className="stat-label">Temporadas</span>
           </div>
           <div className="stat-card">
             <span className="stat-value gold">{stats.yellow_cards || 0}</span>

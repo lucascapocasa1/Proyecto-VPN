@@ -21,7 +21,7 @@ export default function Standings() {
 
   const canRecalculate = user?.role === "SUPERADMIN" || user?.role === "ADMIN_LIGA";
 
-  const fetchData = useCallback(() => {
+  const fetchSeasonData = useCallback(() => {
     if (!seasonId) {
       setLoading(true);
       seasonsApi
@@ -35,28 +35,38 @@ export default function Standings() {
     setLoading(true);
     setError(null);
 
-    const params: { season: number; division?: number } = { season: Number(seasonId) };
-    if (selectedDivision) params.division = Number(selectedDivision);
-
-    Promise.all([
-      seasonsApi.get(Number(seasonId)),
-      standingsApi.list(params),
-    ])
-      .then(([seasonRes, standingsRes]) => {
+    seasonsApi
+      .get(Number(seasonId))
+      .then((seasonRes) => {
         setSeason(seasonRes.data);
-        setStandings(standingsRes.data.results || standingsRes.data);
-
         if (!selectedDivision && seasonRes.data.divisions?.length > 0) {
           setSelectedDivision(String(seasonRes.data.divisions[0].id));
         }
       })
-      .catch(() => setError("Error al cargar datos"))
+      .catch(() => setError("Error al cargar temporada"))
+      .finally(() => setLoading(false));
+  }, [seasonId]);
+
+  const fetchStandings = useCallback(() => {
+    if (!seasonId || !selectedDivision) return;
+
+    setLoading(true);
+    setError(null);
+
+    standingsApi
+      .list({ season: Number(seasonId), division: Number(selectedDivision) })
+      .then((res) => setStandings(res.data.results || res.data))
+      .catch(() => setError("Error al cargar posiciones"))
       .finally(() => setLoading(false));
   }, [seasonId, selectedDivision]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchSeasonData();
+  }, [fetchSeasonData]);
+
+  useEffect(() => {
+    fetchStandings();
+  }, [fetchStandings]);
 
   useEffect(() => {
     if (divisionId) setSelectedDivision(divisionId);
@@ -67,7 +77,7 @@ export default function Standings() {
     setRecalculating(true);
     try {
       await standingsApi.recalculate(Number(seasonId), selectedDivision ? Number(selectedDivision) : undefined);
-      fetchData();
+      fetchStandings();
     } catch {
       setError("Error al recalcular");
     } finally {
@@ -77,7 +87,7 @@ export default function Standings() {
 
   if (!seasonId) {
     if (loading) return <Loading />;
-    if (error) return <ErrorMessage message={error} onRetry={fetchData} />;
+    if (error) return <ErrorMessage message={error} onRetry={fetchSeasonData} />;
 
     return (
       <div>
@@ -107,7 +117,7 @@ export default function Standings() {
   }
 
   if (loading) return <Loading />;
-  if (error) return <ErrorMessage message={error} onRetry={fetchData} />;
+  if (error) return <ErrorMessage message={error} onRetry={fetchStandings} />;
 
   const currentDivision = season?.divisions?.find(
     (d) => String(d.id) === selectedDivision
