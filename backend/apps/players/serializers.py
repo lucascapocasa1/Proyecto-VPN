@@ -32,7 +32,7 @@ class PlayerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Player
         fields = [
-            "id", "nickname", "platform", "country", "country_name",
+            "id", "nickname", "platform", "position", "country", "country_name",
             "is_active", "created_at", "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
@@ -46,7 +46,7 @@ class PlayerDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Player
         fields = [
-            "id", "nickname", "platform", "country", "country_name",
+            "id", "nickname", "platform", "position", "country", "country_name",
             "is_active", "identity_history", "club_history",
             "created_at", "updated_at",
         ]

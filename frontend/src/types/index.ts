@@ -118,6 +118,7 @@ export interface Player {
   id: number;
   nickname: string;
   platform: "PLAYSTATION" | "XBOX" | "PC" | null;
+  position: "ARQ" | "DEF" | "MED" | "DEL" | null;
   country: number | null;
   country_name: string | null;
   is_active: boolean;

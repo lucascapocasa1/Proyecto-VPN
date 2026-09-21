@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { standingsApi, seasonsApi } from "../api";
-import type { Standing, Season } from "../types";
+import type { Standing, Season, SeasonList } from "../types";
 import StandingsTable from "../components/ui/StandingsTable";
 import Loading from "../components/ui/Loading";
 import ErrorMessage from "../components/ui/ErrorMessage";
@@ -11,6 +11,7 @@ export default function Standings() {
   const { seasonId, divisionId } = useParams<{ seasonId: string; divisionId: string }>();
   const [standings, setStandings] = useState<Standing[]>([]);
   const [season, setSeason] = useState<Season | null>(null);
+  const [allSeasons, setAllSeasons] = useState<SeasonList[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [recalculating, setRecalculating] = useState(false);
@@ -19,7 +20,13 @@ export default function Standings() {
   const canRecalculate = user?.role === "SUPERADMIN" || user?.role === "ADMIN_LIGA";
 
   const fetchData = useCallback(() => {
-    if (!seasonId) return;
+    if (!seasonId) {
+      seasonsApi.list().then((res) => {
+        setAllSeasons(res.data.results);
+        setLoading(false);
+      }).catch(() => setError("Error al cargar temporadas")).finally(() => setLoading(false));
+      return;
+    }
     setLoading(true);
     setError(null);
     Promise.all([
@@ -48,6 +55,26 @@ export default function Standings() {
 
   if (loading) return <Loading />;
   if (error) return <ErrorMessage message={error} onRetry={fetchData} />;
+
+  if (!seasonId) {
+    return (
+      <div className="standings-page">
+        <h1>Tabla de Posiciones</h1>
+        <p className="empty">Selecciona una temporada para ver la tabla de posiciones</p>
+        <div className="card-grid">
+          {allSeasons.map((s) => (
+            <Link key={s.id} to={`/standings/${s.id}`} className="card">
+              <h3>{s.name}</h3>
+              <p>{s.league_name}</p>
+              <span className="badge">{s.status}</span>
+            </Link>
+          ))}
+        </div>
+        {allSeasons.length === 0 && <p className="empty">No hay temporadas disponibles</p>}
+      </div>
+    );
+  }
+
   if (!season) return <ErrorMessage message="Temporada no encontrada" />;
 
   return (

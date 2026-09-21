@@ -39,17 +39,21 @@ export default function Home() {
       </section>
 
       <section className="home-section">
-        <h2>Temporadas Activas</h2>
+        <h2>Temporadas</h2>
         <div className="card-grid">
-          {seasons.filter(s => s.status === "ACTIVE").map((season) => (
+          {seasons.map((season) => (
             <Link key={season.id} to={`/standings/${season.id}`} className="card">
               <h3>{season.name}</h3>
               <p>{season.league_name}</p>
-              <span className="badge badge-active">Activa</span>
+              <span className="badge" style={{
+                backgroundColor: season.status === "ACTIVE" ? "#22c55e" : season.status === "FINISHED" ? "#6b7280" : "#94a3b8"
+              }}>
+                {season.status === "ACTIVE" ? "Activa" : season.status === "FINISHED" ? "Finalizada" : "Proxima"}
+              </span>
             </Link>
           ))}
-          {seasons.filter(s => s.status === "ACTIVE").length === 0 && (
-            <p className="empty">No hay temporadas activas</p>
+          {seasons.length === 0 && (
+            <p className="empty">No hay temporadas disponibles</p>
           )}
         </div>
       </section>

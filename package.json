@@ -1,0 +1,27 @@
+{
+  "name": "proyecto-vpn",
+  "version": "1.0.0",
+  "description": "Plataforma web profesional para gestionar competiciones de **EA Sports FC — Clubes Pro**.",
+  "main": "index.js",
+  "scripts": {
+    "backend": "cd backend && python manage.py runserver",
+    "frontend": "cd frontend && npm run dev",
+    "dev": "concurrently --names BE,FE --prefix-colors blue,green \"npm run backend\" \"npm run frontend\"",
+    "test": "cd backend && python manage.py test apps.accounts.tests apps.players.tests apps.clubs.tests apps.matches.tests apps.standings.tests apps.statistics.tests -v 2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lucascapocasa1/Proyecto-VPN.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/lucascapocasa1/Proyecto-VPN/issues"
+  },
+  "homepage": "https://github.com/lucascapocasa1/Proyecto-VPN#readme",
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}

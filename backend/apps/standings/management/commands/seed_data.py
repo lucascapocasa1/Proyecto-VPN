@@ -61,9 +61,33 @@ CLUB_NAMES_URY = [
 POSITIONS = ["ARQ"] * 2 + ["DEF"] * 4 + ["MED"] * 5 + ["DEL"] * 4
 PLATFORMS = ["PLAYSTATION", "XBOX", "PC"]
 
+FIRST_NAMES = [
+    "Lucas", "Mateo", "Santiago", "Thiago", "Mateo", "Valentino", "Joaquín",
+    "Benjamín", "Santino", "Lautaro", "Emiliano", "Agustín", "Dylan", "Ian",
+    "Alejandro", "Diego", "Martín", "Nicolás", "Franco", "Facundo", "Tomás",
+    "Ramiro", "Bruno", "Gonzalo", "Axel", "Mateo", "Luciano", "Fernando",
+    "Eduardo", "Carlos", "Sergio", "Andrés", "Miguel", "Ricardo", "Pablo",
+    "Roberto", "Daniel", "Marcelo", "Gustavo", "Héctor", "Raúl", "Oscar",
+    "Enzo", "Kevin", "Alan", "Thiago", "Gastón", "Cristian", "Maximiliano",
+]
+
+LAST_NAMES = [
+    "García", "López", "Martínez", "Rodríguez", "Fernández", "Álvarez",
+    "Romero", "Díaz", "Torres", "Acuña", "Ruiz", "Flores", "Benítez",
+    "Medina", "Herrera", "Aguilar", "Pereyra", "Giménez", "Morales",
+    "Ortiz", "Sosa", "Rojas", "Vargas", "Castro", "Mendoza", "Luna",
+    "Quiroga", "Muñoz", "Córdoba", "Ríos", "Paz", "González", "Ávila",
+    "Campos", "Vera", "Navarro", "Campos", "Reyes", "Figueroa",
+]
+
+NICKNAME_SUFFIXES = [
+    "10", "7", "9", "11", "5", "8", "3", "6", "4", "2",
+    "FC", "pro", "goal", "king", "ace", "star", "magic",
+]
+
 
 class Command(BaseCommand):
-    help = "Create full seed data: 2 countries, 2 seasons each, ~26K records"
+    help = "Create full seed data: 2 countries, 2 seasons each, ~34K records"
 
     def handle(self, *args, **options):
         random.seed(42)
@@ -71,6 +95,8 @@ class Command(BaseCommand):
 
         self._create_users()
         self._create_shared_infra()
+
+        self.used_nicknames = set()
 
         self.argentina = self._create_country("Argentina", "AR")
         self._populate_country(self.argentina, CLUB_NAMES_ARG, "Liga Argentina")
@@ -112,6 +138,24 @@ class Command(BaseCommand):
     def _create_country(self, name, code):
         self.stdout.write(f"\n  === {name} ===")
         return Country.objects.create(name=name, code=code)
+
+    def _generate_nickname(self):
+        while True:
+            first = random.choice(FIRST_NAMES)
+            last = random.choice(LAST_NAMES)
+            suffix = random.choice(NICKNAME_SUFFIXES)
+            nickname_type = random.choice(["first_last", "first_suffix", "last_suffix", "firstlast"])
+            if nickname_type == "first_last":
+                nick = f"{first}_{last[:3].lower()}"
+            elif nickname_type == "first_suffix":
+                nick = f"{first.lower()}{suffix}"
+            elif nickname_type == "last_suffix":
+                nick = f"{last.lower()}{suffix}"
+            else:
+                nick = f"{first.lower()}{last.lower()}"
+            if nick not in self.used_nicknames:
+                self.used_nicknames.add(nick)
+                return nick
 
     def _populate_country(self, country, club_names, league_name):
         league = League.objects.create(name=league_name, country=country)
@@ -162,7 +206,7 @@ class Command(BaseCommand):
         for ci, club in enumerate(clubs):
             for pi, pos in enumerate(POSITIONS):
                 player = Player.objects.create(
-                    nickname=f"{country.code.lower()}_{ci}_{pi}_{pos.lower()}",
+                    nickname=self._generate_nickname(),
                     platform=random.choice(PLATFORMS),
                     country=country,
                     position=pos,
@@ -295,12 +339,32 @@ class Command(BaseCommand):
             away_mps.append(mp)
             events_count += 1
 
+        def _weighted_scorer(team_mps):
+            weights = []
+            for mp in team_mps:
+                if not mp.player:
+                    continue
+                pos = mp.player.position
+                if pos == "DEL":
+                    weights.append(10)
+                elif pos == "MED":
+                    weights.append(5)
+                elif pos == "DEF":
+                    weights.append(2)
+                elif pos == "ARQ":
+                    weights.append(0.5)
+                else:
+                    weights.append(3)
+            real = [mp for mp in team_mps if mp.player]
+            if not real:
+                return None
+            return random.choices(real, weights=weights, k=1)[0]
+
         for team_mps, goals in [(home_mps, match.home_goals), (away_mps, match.away_goals)]:
             for _ in range(goals or 0):
-                real_players = [mp for mp in team_mps if mp.player]
-                if not real_players:
+                scorer = _weighted_scorer(team_mps)
+                if not scorer:
                     continue
-                scorer = random.choice(real_players)
                 minute = _pick_minute()
                 MatchEvent.objects.create(
                     match=match, match_player=scorer,
@@ -308,9 +372,9 @@ class Command(BaseCommand):
                 )
                 events_count += 1
                 if random.random() < 0.7:
-                    others = [mp for mp in real_players if mp != scorer]
-                    if others:
-                        assister = random.choice(others)
+                    real = [mp for mp in team_mps if mp.player and mp != scorer]
+                    if real:
+                        assister = random.choice(real)
                         MatchEvent.objects.create(
                             match=match, match_player=assister,
                             event_type=MatchEvent.EventType.ASSIST, minute=minute,
