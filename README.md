@@ -320,6 +320,7 @@ python manage.py recalculate_standings --all
 python manage.py generate_fixtures --season 1 --division 1
 python manage.py seed_data        # Dataset completo (~34K registros, 2 países)
 python manage.py seed_dev         # Dataset chico (~1.2K registros, 1 país)
+python manage.py flush            # Limpiar base de datos
 ```
 
 ---
@@ -340,6 +341,10 @@ python manage.py test apps.accounts.tests apps.players.tests apps.clubs.tests ap
 
 # Frontend
 cd frontend
+npm install
+npm run dev
+
+# O desde la raíz (arranca backend + frontend juntos)
 npm install
 npm run dev
 ```
@@ -390,7 +395,6 @@ npm run dev
 
 Ver `PROXIMOS_CAMBIOS.md` para el plan detallado:
 
-- **Base de datos grande** — 20 equipos por división, 15 jugadores por equipo, datos realistas
 - **Mercado de pases** — Free agents, invitaciones a clubes, ventana de pases controlada por admin
 - **Carga de estadísticas** — Formulario para cargar goles, asistencias, tarjetas y MVP por partido
 - **Brasil** — Tercer país con la misma estructura de ligas

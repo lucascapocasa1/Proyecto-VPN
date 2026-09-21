@@ -23,10 +23,7 @@ Liga
 ├── Temporada 1 (FINISHED)
 │   ├── Primera Division (20 equipos)
 │   └── Segunda Division (20 equipos)
-├── Temporada 2 (FINISHED)
-│   ├── Primera Division (20 equipos)
-│   └── Segunda Division (20 equipos)
-└── Temporada 3 (UPCOMING, sin partidos)
+└── Temporada 2 (UPCOMING, sin partidos)
     ├── Primera Division (20 equipos, armada por admin)
     └── Segunda Division (20 equipos)
 ```
@@ -48,23 +45,15 @@ Liga
 ### Ascensos/descensos entre temporadas
 
 - Manual por el admin (no automatico)
-- La temporada 3 muestra los equipos ya posicionados por el admin
+- La temporada 2 muestra los equipos ya posicionados por el admin
 
 ### Jugadores
 
 - 15 por equipo (2 ARQ, 4 DEF, 5 MED, 4 DEL)
 - Maximo 3 extranjeros por equipo
 - Nacionalidades mezcladas (mayoria del pais local)
-- Estadisticas realistas por posicion
-
-### Estadisticas por posicion
-
-| Pos | Goles/partido | Asistencias/partido | Amarillas | Rojas |
-|-----|--------------|--------------------|-----------|-------|
-| ARQ | 0.01 | 0.02 | 2-5 | 0-1 |
-| DEF | 0.05 | 0.08 | 5-10 | 0-2 |
-| MED | 0.12 | 0.15 | 4-8 | 0-1 |
-| DEL | 0.35 | 0.08 | 3-6 | 0-1 |
+- Nicknames realistas (ej: lucas_gar10, diego_pro)
+- Estadisticas realistas por posicion (goles pesados: DEL=10x, MED=5x, DEF=2x, ARQ=0.5x)
 
 ### Volumen final (2 paises, S1 FINISHED + S2 UPCOMING)
 
@@ -81,20 +70,23 @@ Liga
 | Matchdays | 38 | 38 | 76 |
 | Matches (S1) | 380 | 380 | 760 |
 | MatchPlayers | 11,400 | 11,400 | 22,800 |
-| MatchEvents | ~7,500 | ~7,500 | ~15,000 |
+| MatchEvents | ~14,850 | ~14,850 | ~29,700 |
 | Standings | 40 | 40 | 80 |
 | **Total** | | | **~34,354** |
 
 ### Archivos creados/modificados
 
 - `apps/players/models.py` — Campo `position` agregado (ARQ/DEF/MED/DEL)
-- `apps/players/migrations/0002_player_position.py` — Migración creada
-- `apps/standings/management/commands/seed_data.py` — Reescrito (dataset completo)
+- `apps/players/migrations/0002_player_position.py` — Migracion creada
+- `apps/players/serializers.py` — position incluido en PlayerSerializer y PlayerDetailSerializer
+- `apps/standings/management/commands/seed_data.py` — Reescrito (dataset completo, nicknames realistas, position-based stats)
 - `apps/standings/management/commands/seed_dev.py` — Creado (dataset chico para dev)
+- `frontend/src/types/index.ts` — position agregado a Player interface
+- `frontend/src/components/ui/PlayerCard.tsx` — Badge de posicion
 
 ### Estado
 
-✅ Implementado y verificado
+✅ Implementado y verificado (74 tests pasando, Playwright testing OK)
 
 ---
 
@@ -106,9 +98,10 @@ Sistema de transferencias donde jugadores sin club aparecen automaticamente en e
 
 ### Modelos
 
-#### Modificar Player — agregar posicion
+#### ~~Modificar Player — agregar posicion~~ (YA IMPLEMENTADO)
 
 ```python
+# Ya existe en apps/players/models.py
 position = models.CharField(
     max_length=3,
     choices=[
@@ -119,6 +112,9 @@ position = models.CharField(
     ],
     null=True, blank=True,
 )
+# Migracion: 0002_player_position
+# Serializers: PlayerSerializer y PlayerDetailSerializer incluyen position
+# Frontend: Player interface incluye position, PlayerCard muestra badge
 ```
 
 #### Nuevo modelo Transfer

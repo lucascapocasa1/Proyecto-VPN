@@ -266,8 +266,10 @@ python manage.py seed_data
 - 600 players per country (15 por club, con position)
 - S1 FINISHED: 380 partidos por país (round-robin, 2 divisiones)
 - S2 UPCOMING: sin partidos, solo equipos asignados
-- ~15,000 MatchEvents total
+- ~29,500 MatchEvents total
 - 80 standings (recalculados)
+- Nicknames realistas (ej: lucas_gar10, diego_pro)
+- Goles pesados por posición (DEL=10x, MED=5x, DEF=2x, ARQ=0.5x)
 
 ### seed_dev.py — Dataset chico (~1,200 registros)
 
@@ -362,11 +364,34 @@ GET /api/health/ → {"status": "ok", "db": "ok"}
 
 Ver `PROXIMOS_CAMBIOS.md` para detalles completos:
 
-1. **Base de datos grande** — 20 equipos/división, 15 jugadores/equipo, Argentina + Uruguay
-2. **Mercado de pases** — Free agents, invitaciones, ventana de pases
-3. **Brasil** — Agregar como tercer país
-4. **Carga de estadísticas** — Formulario manual para goles, asistencias, tarjetas, MVP
+1. **Mercado de pases** — Free agents, invitaciones, ventana de pases
+2. **Brasil** — Agregar como tercer país
+3. **Carga de estadísticas** — Formulario manual para goles, asistencias, tarjetas, MVP
 
 ---
 
-*Última actualización: Fase 10 completada — Features pendientes documentadas*
+## Testing
+
+### Backend (pytest)
+
+```bash
+cd backend
+python manage.py test --verbosity=2
+```
+
+74 tests en 6 archivos, todos pasando.
+
+### Frontend (Playwright)
+
+```bash
+cd frontend
+npx playwright test
+# o desde la raíz:
+python test_app.py
+```
+
+Screenshots se guardan en `test_screenshots/`.
+
+---
+
+*Última actualización: Seed data realistas + fixes UI Playwright*
