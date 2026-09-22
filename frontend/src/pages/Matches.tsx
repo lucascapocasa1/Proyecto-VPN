@@ -4,6 +4,9 @@ import type { Match, SeasonList, Division } from "../types";
 import MatchCard from "../components/ui/MatchCard";
 import Loading from "../components/ui/Loading";
 import ErrorMessage from "../components/ui/ErrorMessage";
+import Pagination from "../components/ui/Pagination";
+
+const PAGE_SIZE = 3;
 
 export default function Matches() {
   const [matches, setMatches] = useState<Match[]>([]);
@@ -14,6 +17,7 @@ export default function Matches() {
   const [statusFilter, setStatusFilter] = useState("");
   const [seasonFilter, setSeasonFilter] = useState("");
   const [divisionFilter, setDivisionFilter] = useState("");
+  const [page, setPage] = useState(1);
   const abortRef = useRef<AbortController | null>(null);
 
   const fetchMatches = useCallback(() => {
@@ -71,6 +75,10 @@ export default function Matches() {
     return acc;
   }, {});
 
+  const matchdayEntries = Object.entries(grouped);
+  const totalPages = Math.ceil(matchdayEntries.length / PAGE_SIZE);
+  const paginatedMatchdays = matchdayEntries.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   if (loading) return <Loading />;
   if (error) return <ErrorMessage message={error} onRetry={fetchMatches} />;
 
@@ -84,7 +92,7 @@ export default function Matches() {
         <select
           className="filter-select"
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
         >
           <option value="">Todos los estados</option>
           <option value="SCHEDULED">Programados</option>
@@ -97,7 +105,7 @@ export default function Matches() {
         <select
           className="filter-select"
           value={seasonFilter}
-          onChange={(e) => setSeasonFilter(e.target.value)}
+          onChange={(e) => { setSeasonFilter(e.target.value); setPage(1); }}
         >
           <option value="">Todas las temporadas</option>
           {seasons.map((s) => (
@@ -111,7 +119,7 @@ export default function Matches() {
           <select
             className="filter-select"
             value={divisionFilter}
-            onChange={(e) => setDivisionFilter(e.target.value)}
+            onChange={(e) => { setDivisionFilter(e.target.value); setPage(1); }}
           >
             <option value="">Todas las divisiones</option>
             {divisions.map((d) => (
@@ -123,10 +131,10 @@ export default function Matches() {
         )}
       </div>
 
-      {Object.keys(grouped).length === 0 ? (
+      {paginatedMatchdays.length === 0 ? (
         <p className="empty">No se encontraron partidos</p>
       ) : (
-        Object.entries(grouped).map(([matchday, matchdayMatches]) => (
+        paginatedMatchdays.map(([matchday, matchdayMatches]) => (
           <div key={matchday} className="matchday-group">
             <div className="matchday-header">
               <h3>{matchday}</h3>
@@ -140,6 +148,8 @@ export default function Matches() {
           </div>
         ))
       )}
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

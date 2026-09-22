@@ -5,7 +5,10 @@ import ClubCard from "../components/ui/ClubCard";
 import Loading from "../components/ui/Loading";
 import ErrorMessage from "../components/ui/ErrorMessage";
 import SearchBar from "../components/ui/SearchBar";
+import Pagination from "../components/ui/Pagination";
 import { useAuth } from "../context/AuthContext";
+
+const PAGE_SIZE = 20;
 
 export default function Clubs() {
   const [clubs, setClubs] = useState<Club[]>([]);
@@ -15,6 +18,7 @@ export default function Clubs() {
   const [form, setForm] = useState({ name: "", short_name: "", country: 1 });
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const { user } = useAuth();
   const abortRef = useRef<AbortController | null>(null);
 
@@ -69,6 +73,9 @@ export default function Clubs() {
       : true
   );
 
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   if (loading) return <Loading />;
   if (error) return <ErrorMessage message={error} onRetry={fetchClubs} />;
 
@@ -106,15 +113,17 @@ export default function Clubs() {
         </form>
       )}
 
-      <SearchBar value={search} onChange={setSearch} placeholder="Buscar club..." />
+      <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Buscar club..." />
 
       <div className="card-grid">
-        {filtered.map((club) => (
+        {paginated.map((club) => (
           <ClubCard key={club.id} club={club} />
         ))}
       </div>
 
       {filtered.length === 0 && <p className="empty">No se encontraron clubes</p>}
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }
