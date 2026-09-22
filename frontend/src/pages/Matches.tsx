@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { matchesApi, seasonsApi, divisionsApi } from "../api";
 import type { Match, SeasonList, Division } from "../types";
 import MatchCard from "../components/ui/MatchCard";
@@ -14,8 +14,13 @@ export default function Matches() {
   const [statusFilter, setStatusFilter] = useState("");
   const [seasonFilter, setSeasonFilter] = useState("");
   const [divisionFilter, setDivisionFilter] = useState("");
+  const abortRef = useRef<AbortController | null>(null);
 
   const fetchMatches = useCallback(() => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setError(null);
     const params: Record<string, string> = {};
@@ -25,9 +30,17 @@ export default function Matches() {
 
     matchesApi
       .list(params)
-      .then((res) => setMatches(res.data.results || res.data))
-      .catch(() => setError("Error al cargar partidos"))
-      .finally(() => setLoading(false));
+      .then((res) => {
+        if (!controller.signal.aborted) setMatches(res.data.results || res.data);
+      })
+      .catch((err) => {
+        if (err?.name !== "CanceledError" && err?.code !== "ERR_CANCELED") {
+          setError("Error al cargar partidos");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
   }, [statusFilter, seasonFilter, divisionFilter]);
 
   useEffect(() => {
@@ -48,6 +61,7 @@ export default function Matches() {
 
   useEffect(() => {
     fetchMatches();
+    return () => abortRef.current?.abort();
   }, [fetchMatches]);
 
   const grouped = matches.reduce<Record<string, Match[]>>((acc, m) => {

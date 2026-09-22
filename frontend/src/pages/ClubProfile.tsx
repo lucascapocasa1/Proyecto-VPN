@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { clubsApi, standingsApi } from "../api";
 import type { ClubDetail, Standing } from "../types";
@@ -27,16 +27,23 @@ export default function ClubProfile() {
   const [standings, setStandings] = useState<Standing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const fetchData = () => {
     if (!id) return;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setError(null);
     clubsApi
       .get(Number(id))
       .then((res) => {
+        if (controller.signal.aborted) return;
         setClub(res.data);
         standingsApi.list().then((standingsRes) => {
+          if (controller.signal.aborted) return;
           const allStandings = standingsRes.data.results || standingsRes.data;
           setStandings(
             allStandings.filter((s: Standing) =>
@@ -45,12 +52,19 @@ export default function ClubProfile() {
           );
         });
       })
-      .catch(() => setError("Error al cargar club"))
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        if (err?.name !== "CanceledError" && err?.code !== "ERR_CANCELED") {
+          setError("Error al cargar club");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
   };
 
   useEffect(() => {
     fetchData();
+    return () => abortRef.current?.abort();
   }, [id]);
 
   if (loading) return <Loading />;

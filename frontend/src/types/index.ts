@@ -253,17 +253,23 @@ export interface User {
 export interface TopScorer {
   player_id: number;
   nickname: string;
+  position: string | null;
+  country_name: string | null;
   goals: number;
 }
 
 export interface TopAssist {
   player_id: number;
   nickname: string;
+  position: string | null;
+  country_name: string | null;
   assists: number;
 }
 
 export interface TopMVP {
   player_id: number;
   nickname: string;
+  position: string | null;
+  country_name: string | null;
   mvp_count: number;
 }

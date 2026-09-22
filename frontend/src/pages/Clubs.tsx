@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { clubsApi } from "../api";
 import type { Club } from "../types";
 import ClubCard from "../components/ui/ClubCard";
@@ -16,21 +16,35 @@ export default function Clubs() {
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState("");
   const { user } = useAuth();
+  const abortRef = useRef<AbortController | null>(null);
 
   const canManage = user?.role === "SUPERADMIN";
 
   const fetchClubs = useCallback(() => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setError(null);
     clubsApi
       .list()
-      .then((res) => setClubs(res.data.results || res.data))
-      .catch(() => setError("Error al cargar clubes"))
-      .finally(() => setLoading(false));
+      .then((res) => {
+        if (!controller.signal.aborted) setClubs(res.data.results || res.data);
+      })
+      .catch((err) => {
+        if (err?.name !== "CanceledError" && err?.code !== "ERR_CANCELED") {
+          setError("Error al cargar clubes");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
   }, []);
 
   useEffect(() => {
     fetchClubs();
+    return () => abortRef.current?.abort();
   }, [fetchClubs]);
 
   const handleCreate = async (e: React.FormEvent) => {

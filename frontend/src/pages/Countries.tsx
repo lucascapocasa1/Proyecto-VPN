@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { countriesApi } from "../api";
 import type { Country } from "../types";
@@ -17,19 +17,33 @@ export default function Countries() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const abortRef = useRef<AbortController | null>(null);
 
   const fetchCountries = () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setError(null);
     countriesApi
       .list()
-      .then((res) => setCountries(res.data.results || res.data))
-      .catch(() => setError("Error al cargar paises"))
-      .finally(() => setLoading(false));
+      .then((res) => {
+        if (!controller.signal.aborted) setCountries(res.data.results || res.data);
+      })
+      .catch((err) => {
+        if (err?.name !== "CanceledError" && err?.code !== "ERR_CANCELED") {
+          setError("Error al cargar paises");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
   };
 
   useEffect(() => {
     fetchCountries();
+    return () => abortRef.current?.abort();
   }, []);
 
   const filtered = countries.filter((c) =>

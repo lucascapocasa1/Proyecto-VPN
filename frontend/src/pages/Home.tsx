@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { seasonsApi, clubsApi, standingsApi, statisticsApi } from "../api";
 import type { SeasonList, Club, Standing, TopScorer } from "../types";
@@ -14,8 +14,13 @@ export default function Home() {
   const [topAssists, setTopAssists] = useState<{ player_id: number; nickname: string; assists: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const fetchData = () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setError(null);
     Promise.all([
@@ -25,6 +30,7 @@ export default function Home() {
       statisticsApi.topAssists({ limit: 5 }),
     ])
       .then(([seasonsRes, clubsRes, scorersRes, assistsRes]) => {
+        if (controller.signal.aborted) return;
         const allSeasons = seasonsRes.data.results;
         setSeasons(allSeasons);
         setClubs(clubsRes.data.results.slice(0, 6));
@@ -35,15 +41,22 @@ export default function Home() {
         if (finished) {
           standingsApi
             .list({ season: finished.id })
-            .then((res) => setStandings(res.data.results || res.data));
+            .then((res) => {
+              if (!controller.signal.aborted) setStandings(res.data.results || res.data);
+            });
         }
       })
-      .catch(() => setError("Error al cargar datos"))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (!controller.signal.aborted) setError("Error al cargar datos");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
   };
 
   useEffect(() => {
     fetchData();
+    return () => abortRef.current?.abort();
   }, []);
 
   if (loading) return <Loading />;

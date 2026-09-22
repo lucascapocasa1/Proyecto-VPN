@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { playersApi } from "../api";
 import type { Player } from "../types";
 import PlayerCard from "../components/ui/PlayerCard";
@@ -16,21 +16,35 @@ export default function Players() {
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState("");
   const { user } = useAuth();
+  const abortRef = useRef<AbortController | null>(null);
 
   const canManage = user?.role === "SUPERADMIN";
 
   const fetchPlayers = useCallback(() => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setError(null);
     playersApi
       .list()
-      .then((res) => setPlayers(res.data.results || res.data))
-      .catch(() => setError("Error al cargar jugadores"))
-      .finally(() => setLoading(false));
+      .then((res) => {
+        if (!controller.signal.aborted) setPlayers(res.data.results || res.data);
+      })
+      .catch((err) => {
+        if (err?.name !== "CanceledError" && err?.code !== "ERR_CANCELED") {
+          setError("Error al cargar jugadores");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
   }, []);
 
   useEffect(() => {
     fetchPlayers();
+    return () => abortRef.current?.abort();
   }, [fetchPlayers]);
 
   const handleCreate = async (e: React.FormEvent) => {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { standingsApi, seasonsApi } from "../api";
 import type { Standing, Season, SeasonList } from "../types";
@@ -17,6 +17,7 @@ export default function Standings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [recalculating, setRecalculating] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
   const { user } = useAuth();
 
   const canRecalculate = user?.role === "SUPERADMIN" || user?.role === "ADMIN_LIGA";
@@ -50,14 +51,26 @@ export default function Standings() {
   const fetchStandings = useCallback(() => {
     if (!seasonId || !selectedDivision) return;
 
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setError(null);
 
     standingsApi
       .list({ season: Number(seasonId), division: Number(selectedDivision) })
-      .then((res) => setStandings(res.data.results || res.data))
-      .catch(() => setError("Error al cargar posiciones"))
-      .finally(() => setLoading(false));
+      .then((res) => {
+        if (!controller.signal.aborted) setStandings(res.data.results || res.data);
+      })
+      .catch((err) => {
+        if (err?.name !== "CanceledError" && err?.code !== "ERR_CANCELED") {
+          setError("Error al cargar posiciones");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
   }, [seasonId, selectedDivision]);
 
   useEffect(() => {
@@ -66,6 +79,7 @@ export default function Standings() {
 
   useEffect(() => {
     fetchStandings();
+    return () => abortRef.current?.abort();
   }, [fetchStandings]);
 
   useEffect(() => {

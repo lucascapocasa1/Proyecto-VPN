@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
-import { statisticsApi, seasonsApi, divisionsApi, playersApi } from "../api";
-import type { SeasonList, Division, TopScorer, TopAssist, TopMVP, Player } from "../types";
+import { statisticsApi, seasonsApi, divisionsApi } from "../api";
+import type { SeasonList, Division, TopScorer, TopAssist, TopMVP } from "../types";
 import Loading from "../components/ui/Loading";
 import ErrorMessage from "../components/ui/ErrorMessage";
 
@@ -27,7 +27,7 @@ const POSITION_SHORT: Record<string, string> = {
   DEL: "DEL",
 };
 
-interface EnrichedPlayer {
+interface StatEntry {
   id: number;
   name: string;
   value: number;
@@ -46,7 +46,7 @@ export default function Statistics() {
   const [divisionFilter, setDivisionFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [playerCache, setPlayerCache] = useState<Map<number, Player>>(new Map());
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     seasonsApi.list().then((res) => setSeasons(res.data.results));
@@ -64,6 +64,10 @@ export default function Statistics() {
   }, [seasonFilter]);
 
   const fetchData = useCallback(() => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setError(null);
     const params: Record<string, string> = {};
@@ -76,74 +80,54 @@ export default function Statistics() {
       statisticsApi.topMvp({ ...params, limit: 30 }),
     ])
       .then(([scorersRes, assistsRes, mvpsRes]) => {
+        if (controller.signal.aborted) return;
         setScorers(scorersRes.data);
         setAssists(assistsRes.data);
         setMvps(mvpsRes.data);
       })
-      .catch(() => setError("Error al cargar estadisticas"))
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        if (err?.name !== "CanceledError" && err?.code !== "ERR_CANCELED") {
+          setError("Error al cargar estadisticas");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
   }, [seasonFilter, divisionFilter]);
 
   useEffect(() => {
     fetchData();
+    return () => abortRef.current?.abort();
   }, [fetchData]);
-
-  useEffect(() => {
-    const allIds = new Set<number>();
-    scorers.forEach((s) => allIds.add(s.player_id));
-    assists.forEach((a) => allIds.add(a.player_id));
-    mvps.forEach((m) => allIds.add(m.player_id));
-
-    const uncached = [...allIds].filter((id) => !playerCache.has(id));
-    if (uncached.length === 0) return;
-
-    uncached.slice(0, 15).forEach((id) => {
-      playersApi
-        .get(id)
-        .then((res) => {
-          setPlayerCache((prev) => new Map(prev).set(id, res.data));
-        })
-        .catch(() => {});
-    });
-  }, [scorers, assists, mvps]);
 
   if (loading) return <Loading />;
   if (error) return <ErrorMessage message={error} onRetry={fetchData} />;
 
   const currentTab = TABS.find((t) => t.key === activeTab)!;
 
-  const data: EnrichedPlayer[] = activeTab === "scorers"
-    ? scorers.map((s) => {
-        const p = playerCache.get(s.player_id);
-        return {
-          id: s.player_id,
-          name: s.nickname,
-          value: s.goals,
-          position: p?.position,
-          country_name: p?.country_name,
-        };
-      })
+  const data: StatEntry[] = activeTab === "scorers"
+    ? scorers.map((s) => ({
+        id: s.player_id,
+        name: s.nickname,
+        value: s.goals,
+        position: s.position,
+        country_name: s.country_name,
+      }))
     : activeTab === "assists"
-    ? assists.map((a) => {
-        const p = playerCache.get(a.player_id);
-        return {
-          id: a.player_id,
-          name: a.nickname,
-          value: a.assists,
-          position: p?.position,
-          country_name: p?.country_name,
-        };
-      })
-    : mvps.map((m) => {
-        const p = playerCache.get(m.player_id);
-        return {
-          id: m.player_id,
-          name: m.nickname,
-          value: m.mvp_count,
-          position: p?.position,
-          country_name: p?.country_name,
-        };
-      });
+    ? assists.map((a) => ({
+        id: a.player_id,
+        name: a.nickname,
+        value: a.assists,
+        position: a.position,
+        country_name: a.country_name,
+      }))
+    : mvps.map((m) => ({
+        id: m.player_id,
+        name: m.nickname,
+        value: m.mvp_count,
+        position: m.position,
+        country_name: m.country_name,
+      }));
 
   return (
     <div>

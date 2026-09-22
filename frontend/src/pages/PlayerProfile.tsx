@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { playersApi, statisticsApi } from "../api";
 import type { PlayerDetail } from "../types";
@@ -54,9 +54,14 @@ export default function PlayerProfile() {
   const [stats, setStats] = useState<PlayerStats>(INITIAL_STATS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const fetchData = () => {
     if (!id) return;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setError(null);
 
@@ -66,6 +71,7 @@ export default function PlayerProfile() {
       statisticsApi.playerHistory(Number(id)).catch(() => ({ data: { history: [] } })),
     ])
       .then(([playerRes, statsRes, historyRes]) => {
+        if (controller.signal.aborted) return;
         setPlayer(playerRes.data);
         const raw = statsRes.data?.stats || statsRes.data || {};
         const historySeasons = historyRes.data?.history || [];
@@ -80,12 +86,19 @@ export default function PlayerProfile() {
           own_goals: raw.own_goals || 0,
         });
       })
-      .catch(() => setError("Error al cargar jugador"))
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        if (err?.name !== "CanceledError" && err?.code !== "ERR_CANCELED") {
+          setError("Error al cargar jugador");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
   };
 
   useEffect(() => {
     fetchData();
+    return () => abortRef.current?.abort();
   }, [id]);
 
   if (loading) return <Loading />;

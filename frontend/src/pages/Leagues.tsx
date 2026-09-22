@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { leaguesApi, countriesApi } from "../api";
 import type { League, Country } from "../types";
@@ -15,8 +15,13 @@ export default function Leagues() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const abortRef = useRef<AbortController | null>(null);
 
   const fetchData = () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setError(null);
     Promise.all([
@@ -24,15 +29,23 @@ export default function Leagues() {
       countriesApi.list(),
     ])
       .then(([leaguesRes, countriesRes]) => {
+        if (controller.signal.aborted) return;
         setLeagues(leaguesRes.data.results || leaguesRes.data);
         setCountries(countriesRes.data.results || countriesRes.data);
       })
-      .catch(() => setError("Error al cargar ligas"))
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        if (err?.name !== "CanceledError" && err?.code !== "ERR_CANCELED") {
+          setError("Error al cargar ligas");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
   };
 
   useEffect(() => {
     fetchData();
+    return () => abortRef.current?.abort();
   }, []);
 
   let filtered = leagues;

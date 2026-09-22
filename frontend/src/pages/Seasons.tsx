@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { seasonsApi, leaguesApi } from "../api";
 import type { SeasonList, League } from "../types";
@@ -27,8 +27,13 @@ export default function Seasons() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const abortRef = useRef<AbortController | null>(null);
 
   const fetchData = () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setError(null);
     Promise.all([
@@ -36,15 +41,23 @@ export default function Seasons() {
       leaguesApi.list(),
     ])
       .then(([seasonsRes, leaguesRes]) => {
+        if (controller.signal.aborted) return;
         setSeasons(seasonsRes.data.results);
         setLeagues(leaguesRes.data.results || leaguesRes.data);
       })
-      .catch(() => setError("Error al cargar temporadas"))
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        if (err?.name !== "CanceledError" && err?.code !== "ERR_CANCELED") {
+          setError("Error al cargar temporadas");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
   };
 
   useEffect(() => {
     fetchData();
+    return () => abortRef.current?.abort();
   }, []);
 
   let filtered = seasons;

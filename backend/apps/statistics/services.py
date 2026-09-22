@@ -108,8 +108,6 @@ def get_top_scorers(season=None, division=None, limit=10):
     """
     Get top scorers across all matches.
     """
-    from apps.players.models import Player
-
     events = MatchEvent.objects.filter(
         event_type=MatchEvent.EventType.GOAL,
         match__status=Match.Status.FINISHED,
@@ -123,7 +121,12 @@ def get_top_scorers(season=None, division=None, limit=10):
 
     from django.db.models import Count
     top_scorers = (
-        events.values("match_player__player__id", "match_player__player__nickname")
+        events.values(
+            "match_player__player__id",
+            "match_player__player__nickname",
+            "match_player__player__position",
+            "match_player__player__country__name",
+        )
         .annotate(goal_count=Count("id"))
         .order_by("-goal_count")[:limit]
     )
@@ -132,6 +135,8 @@ def get_top_scorers(season=None, division=None, limit=10):
         {
             "player_id": s["match_player__player__id"],
             "nickname": s["match_player__player__nickname"],
+            "position": s["match_player__player__position"],
+            "country_name": s["match_player__player__country__name"],
             "goals": s["goal_count"],
         }
         for s in top_scorers
@@ -155,7 +160,12 @@ def get_top_assists(season=None, division=None, limit=10):
 
     from django.db.models import Count
     top_assists = (
-        events.values("match_player__player__id", "match_player__player__nickname")
+        events.values(
+            "match_player__player__id",
+            "match_player__player__nickname",
+            "match_player__player__position",
+            "match_player__player__country__name",
+        )
         .annotate(assist_count=Count("id"))
         .order_by("-assist_count")[:limit]
     )
@@ -164,6 +174,8 @@ def get_top_assists(season=None, division=None, limit=10):
         {
             "player_id": a["match_player__player__id"],
             "nickname": a["match_player__player__nickname"],
+            "position": a["match_player__player__position"],
+            "country_name": a["match_player__player__country__name"],
             "assists": a["assist_count"],
         }
         for a in top_assists
@@ -187,7 +199,12 @@ def get_top_mvp(season=None, division=None, limit=10):
 
     from django.db.models import Count
     top_mvp = (
-        events.values("match_player__player__id", "match_player__player__nickname")
+        events.values(
+            "match_player__player__id",
+            "match_player__player__nickname",
+            "match_player__player__position",
+            "match_player__player__country__name",
+        )
         .annotate(mvp_count=Count("id"))
         .order_by("-mvp_count")[:limit]
     )
@@ -196,6 +213,8 @@ def get_top_mvp(season=None, division=None, limit=10):
         {
             "player_id": m["match_player__player__id"],
             "nickname": m["match_player__player__nickname"],
+            "position": m["match_player__player__position"],
+            "country_name": m["match_player__player__country__name"],
             "mvp_count": m["mvp_count"],
         }
         for m in top_mvp
