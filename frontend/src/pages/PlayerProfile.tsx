@@ -106,7 +106,11 @@ export default function PlayerProfile() {
   if (!player) return <p className="empty">Jugador no encontrado</p>;
 
   const currentClub = player.club_history?.find((ch) => ch.is_current);
-  const pastClubs = player.club_history?.filter((ch) => !ch.is_current) || [];
+  const historyStints = [...(player.club_history || [])].sort((a, b) => {
+    const ta = new Date(a.joined_at).getTime();
+    const tb = new Date(b.joined_at).getTime();
+    return ta - tb;
+  });
 
   return (
     <div>
@@ -182,15 +186,48 @@ export default function PlayerProfile() {
         </div>
       </div>
 
-      {pastClubs.length > 0 && (
+      {historyStints.length > 0 && (
         <div className="profile-section">
           <h2>Historial de clubes</h2>
           <div className="history-list">
-            {pastClubs.map((ch) => (
-              <div key={ch.id} className="history-item">
-                <span className="history-club">{ch.club_name}</span>
-                <span className="history-season">{ch.season_name}</span>
-                <span className="history-division">{ch.division_name}</span>
+            {historyStints.map((ch) => (
+              <div key={ch.id} className={`history-item ${ch.is_current ? "history-item-current" : ""}`}>
+                <div className="history-main">
+                  <span className="history-club">
+                    {ch.club_name}
+                    {ch.is_current && <span className="history-current-tag">Actual</span>}
+                  </span>
+                  <span className="history-context">
+                    {ch.game_name ? `${ch.game_name} · ` : ""}
+                    {ch.season_name} · {ch.division_name}
+                  </span>
+                </div>
+                <div className="history-chips">
+                  <span className="stat-chip">
+                    <span className="stat-chip-label">PJ</span>
+                    <span className="stat-chip-value">{ch.stats?.matches_played ?? 0}</span>
+                  </span>
+                  <span className="stat-chip stat-chip-green">
+                    <span className="stat-chip-label">G</span>
+                    <span className="stat-chip-value">{ch.stats?.goals ?? 0}</span>
+                  </span>
+                  <span className="stat-chip stat-chip-green">
+                    <span className="stat-chip-label">A</span>
+                    <span className="stat-chip-value">{ch.stats?.assists ?? 0}</span>
+                  </span>
+                  <span className="stat-chip stat-chip-gold">
+                    <span className="stat-chip-label">MVP</span>
+                    <span className="stat-chip-value">{ch.stats?.mvp ?? 0}</span>
+                  </span>
+                  <span className="stat-chip stat-chip-amber">
+                    <span className="stat-chip-label">TA</span>
+                    <span className="stat-chip-value">{ch.stats?.yellow_cards ?? 0}</span>
+                  </span>
+                  <span className="stat-chip stat-chip-red">
+                    <span className="stat-chip-label">TR</span>
+                    <span className="stat-chip-value">{ch.stats?.red_cards ?? 0}</span>
+                  </span>
+                </div>
               </div>
             ))}
           </div>

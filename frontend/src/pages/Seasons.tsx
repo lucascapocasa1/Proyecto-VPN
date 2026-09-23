@@ -13,7 +13,7 @@ const STATUS_BADGES: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  ACTIVE: "Activa",
+  ACTIVE: "En juego",
   FINISHED: "Finalizada",
   UPCOMING: "Proxima",
 };

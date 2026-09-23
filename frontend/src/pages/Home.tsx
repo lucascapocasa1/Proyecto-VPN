@@ -23,28 +23,29 @@ export default function Home() {
 
     setLoading(true);
     setError(null);
-    Promise.all([
-      seasonsApi.list(),
-      clubsApi.list(),
-      statisticsApi.topScorers({ limit: 5 }),
-      statisticsApi.topAssists({ limit: 5 }),
-    ])
-      .then(([seasonsRes, clubsRes, scorersRes, assistsRes]) => {
+    Promise.all([seasonsApi.list(), clubsApi.list()])
+      .then(([seasonsRes, clubsRes]) => {
         if (controller.signal.aborted) return;
         const allSeasons = seasonsRes.data.results;
         setSeasons(allSeasons);
         setClubs(clubsRes.data.results.slice(0, 6));
-        setTopScorers(scorersRes.data);
-        setTopAssists(assistsRes.data);
 
-        const finished = allSeasons.find((s) => s.status === "FINISHED");
-        if (finished) {
-          standingsApi
-            .list({ season: finished.id })
-            .then((res) => {
-              if (!controller.signal.aborted) setStandings(res.data.results || res.data);
-            });
-        }
+        const featured =
+          allSeasons.find((s) => s.status === "ACTIVE") ||
+          allSeasons.find((s) => s.status === "FINISHED") ||
+          allSeasons[0];
+        if (!featured) return;
+
+        return Promise.all([
+          standingsApi.list({ season: featured.id, page_size: 100 }),
+          statisticsApi.topScorers({ season_id: featured.id, limit: 5 }),
+          statisticsApi.topAssists({ season_id: featured.id, limit: 5 }),
+        ]).then(([standingsRes, scorersRes, assistsRes]) => {
+          if (controller.signal.aborted) return;
+          setStandings(standingsRes.data.results || standingsRes.data);
+          setTopScorers(scorersRes.data);
+          setTopAssists(assistsRes.data);
+        });
       })
       .catch(() => {
         if (!controller.signal.aborted) setError("Error al cargar datos");
@@ -62,8 +63,27 @@ export default function Home() {
   if (loading) return <Loading />;
   if (error) return <ErrorMessage message={error} onRetry={fetchData} />;
 
-  const featuredSeason = seasons.find((s) => s.status === "FINISHED") || seasons[0];
+  const featuredSeason =
+    seasons.find((s) => s.status === "ACTIVE") ||
+    seasons.find((s) => s.status === "FINISHED") ||
+    seasons[0];
   const upcomingSeason = seasons.find((s) => s.status === "UPCOMING");
+
+  const heroLabel = !featuredSeason
+    ? "Competicion destacada"
+    : featuredSeason.status === "ACTIVE"
+    ? "Competicion en juego"
+    : featuredSeason.status === "FINISHED"
+    ? `${featuredSeason.name} finalizada`
+    : "Proxima competicion";
+
+  const heroBadge = !featuredSeason
+    ? ""
+    : featuredSeason.status === "ACTIVE"
+    ? "En juego"
+    : featuredSeason.status === "FINISHED"
+    ? "Finalizada"
+    : "Proxima";
 
   return (
     <div className="home">
@@ -81,17 +101,13 @@ export default function Home() {
           style={{ textDecoration: "none", color: "inherit", display: "flex" }}
         >
           <div className="home-hero-info">
-            <span className="text-label">Competicion destacada</span>
+            <span className="text-label">{heroLabel}</span>
             <h2>
               {featuredSeason.league_name} — {featuredSeason.name}
             </h2>
             <div className="home-hero-meta">
               <span className={`badge ${featuredSeason.status === "FINISHED" ? "badge-muted" : "badge-green"}`}>
-                {featuredSeason.status === "FINISHED"
-                  ? "Finalizada"
-                  : featuredSeason.status === "ACTIVE"
-                  ? "Activa"
-                  : "Proxima"}
+                {heroBadge}
               </span>
               {featuredSeason.game_name && (
                 <span className="badge badge-muted">{featuredSeason.game_name}</span>

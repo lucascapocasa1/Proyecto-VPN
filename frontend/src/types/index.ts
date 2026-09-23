@@ -140,6 +140,15 @@ export interface PlayerIdentityHistory {
   reason: string | null;
 }
 
+export interface PlayerClubStats {
+  matches_played: number;
+  goals: number;
+  assists: number;
+  mvp: number;
+  yellow_cards: number;
+  red_cards: number;
+}
+
 export interface PlayerClubHistory {
   id: number;
   player: number;
@@ -149,7 +158,9 @@ export interface PlayerClubHistory {
   club_name: string;
   season_name: string;
   division_name: string;
+  game_name: string | null;
   is_current: boolean;
+  stats: PlayerClubStats;
 }
 
 export interface Matchday {

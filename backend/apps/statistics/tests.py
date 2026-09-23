@@ -3,6 +3,7 @@ from apps.test_helpers.base import BaseTestCase
 from apps.matches.models import Matchday, Match, MatchPlayer, MatchEvent
 from apps.statistics.services import (
     get_player_statistics,
+    get_player_stats_by_club_season,
     get_top_scorers,
     get_top_assists,
     get_top_mvp,
@@ -82,6 +83,89 @@ class PlayerStatisticsTest(BaseTestCase):
         )
         stats = get_player_statistics(self.players[0])
         self.assertEqual(stats["mvp"], 1)
+
+
+class PlayerStatsByClubSeasonTest(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.matchday = Matchday.objects.create(
+            season=self.season, division=self.primera,
+            number=1, name="Jornada 1",
+        )
+        self.match = Match.objects.create(
+            season=self.season, division=self.primera, matchday=self.matchday,
+            home_club_season=self.club_seasons[0],
+            away_club_season=self.club_seasons[1],
+            home_goals=2, away_goals=0, status=Match.Status.FINISHED,
+        )
+        self.mp = MatchPlayer.objects.create(
+            match=self.match, player=self.players[0],
+            club_season=self.club_seasons[0],
+            display_name=self.players[0].nickname,
+        )
+
+    def test_grouped_by_club_season(self):
+        MatchEvent.objects.create(
+            match=self.match, match_player=self.mp,
+            event_type=MatchEvent.EventType.GOAL, minute=10,
+        )
+        MatchEvent.objects.create(
+            match=self.match, match_player=self.mp,
+            event_type=MatchEvent.EventType.GOAL, minute=30,
+        )
+        MatchEvent.objects.create(
+            match=self.match, match_player=self.mp,
+            event_type=MatchEvent.EventType.ASSIST, minute=45,
+        )
+        MatchEvent.objects.create(
+            match=self.match, match_player=self.mp,
+            event_type=MatchEvent.EventType.MVP, minute=90,
+        )
+        result = get_player_stats_by_club_season(self.players[0])
+        stats = result.get(self.club_seasons[0].id)
+        self.assertIsNotNone(stats)
+        self.assertEqual(stats["matches_played"], 1)
+        self.assertEqual(stats["goals"], 2)
+        self.assertEqual(stats["assists"], 1)
+        self.assertEqual(stats["mvp"], 1)
+        self.assertEqual(stats["yellow_cards"], 0)
+
+    def test_cards_grouped(self):
+        MatchEvent.objects.create(
+            match=self.match, match_player=self.mp,
+            event_type=MatchEvent.EventType.YELLOW_CARD, minute=20,
+        )
+        MatchEvent.objects.create(
+            match=self.match, match_player=self.mp,
+            event_type=MatchEvent.EventType.RED_CARD, minute=80,
+        )
+        result = get_player_stats_by_club_season(self.players[0])
+        stats = result.get(self.club_seasons[0].id)
+        self.assertEqual(stats["yellow_cards"], 1)
+        self.assertEqual(stats["red_cards"], 1)
+
+    def test_matches_without_events_still_counted(self):
+        result = get_player_stats_by_club_season(self.players[0])
+        stats = result.get(self.club_seasons[0].id)
+        self.assertIsNotNone(stats)
+        self.assertEqual(stats["matches_played"], 1)
+        self.assertEqual(stats["goals"], 0)
+
+    def test_serializer_returns_stats(self):
+        from apps.players.models import PlayerClubHistory
+        from apps.players.serializers import PlayerClubHistorySerializer
+
+        pch = PlayerClubHistory.objects.create(
+            player=self.players[0],
+            club_season=self.club_seasons[0],
+            joined_at=timezone.now(),
+        )
+        serializer = PlayerClubHistorySerializer(pch)
+        data = serializer.data
+        self.assertIn("stats", data)
+        self.assertIn("game_name", data)
+        self.assertEqual(data["stats"]["matches_played"], 1)
+        self.assertEqual(data["game_name"], "EA FC 26")
 
 
 class TopScorersTest(BaseTestCase):

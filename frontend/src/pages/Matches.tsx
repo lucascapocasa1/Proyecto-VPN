@@ -27,7 +27,7 @@ export default function Matches() {
 
     setLoading(true);
     setError(null);
-    const params: Record<string, string> = {};
+    const params: Record<string, string | number> = { page_size: 100 };
     if (statusFilter) params.status = statusFilter;
     if (seasonFilter) params.season = seasonFilter;
     if (divisionFilter) params.division = divisionFilter;

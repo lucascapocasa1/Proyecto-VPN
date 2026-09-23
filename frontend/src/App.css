@@ -791,8 +791,8 @@ a:hover {
 }
 
 .table tbody tr.zone-campeon { border-left-color: var(--gold); }
-.table tbody tr.zone-reducido { border-left-color: var(--accent); }
-.table tbody tr.zone-promocion { border-left-color: var(--green); }
+.table tbody tr.zone-reducido { border-left-color: var(--purple); }
+.table tbody tr.zone-promocion { border-left-color: var(--amber); }
 .table tbody tr.zone-descenso { border-left-color: var(--red); }
 
 .col-pos {
@@ -847,45 +847,37 @@ a:hover {
   border-radius: var(--radius-xs);
   font-size: 0.625rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.zone-divider {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-4);
-  background: var(--bg-surface);
-  font-size: 0.6875rem;
-  font-weight: 700;
+  font-family: var(--font-display);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
 }
 
-.zone-divider::before,
-.zone-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
+.zone-badge.zone-campeon {
+  background: var(--gold-soft);
+  color: var(--gold);
+  border-color: rgba(245, 197, 24, 0.35);
 }
 
-.zone-divider-campeon { color: var(--gold); }
-.zone-divider-campeon::before,
-.zone-divider-campeon::after { background: var(--gold-soft); }
+.zone-badge.zone-reducido {
+  background: var(--purple-soft);
+  color: var(--purple);
+  border-color: rgba(139, 92, 246, 0.35);
+}
 
-.zone-divider-reducido { color: var(--accent); }
-.zone-divider-reducido::before,
-.zone-divider-reducido::after { background: var(--accent-glow); }
+.zone-badge.zone-promocion {
+  background: var(--amber-soft);
+  color: var(--amber);
+  border-color: rgba(245, 158, 11, 0.35);
+}
 
-.zone-divider-promocion { color: var(--green); }
-.zone-divider-promocion::before,
-.zone-divider-promocion::after { background: var(--green-soft); }
-
-.zone-divider-descenso { color: var(--red); }
-.zone-divider-descenso::before,
-.zone-divider-descenso::after { background: var(--red-soft); }
+.zone-badge.zone-descenso {
+  background: var(--red-soft);
+  color: var(--red);
+  border-color: rgba(239, 68, 68, 0.35);
+}
 
 /* ============================================
    MATCH CARD
@@ -1322,16 +1314,105 @@ a:hover {
 .history-item {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
   background: var(--bg-card);
   font-size: 0.875rem;
 }
 
+.history-item-current {
+  background: var(--accent-glow);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.history-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
 .history-club,
 .history-nickname {
   font-weight: 700;
-  min-width: 140px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.history-current-tag {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--bg-void);
+  background: var(--accent);
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+}
+
+.history-context {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.history-chips {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.stat-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.stat-chip-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.stat-chip-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  min-width: 0.9em;
+  text-align: center;
+  display: inline-block;
+}
+
+.stat-chip-green .stat-chip-value {
+  color: var(--accent);
+}
+
+.stat-chip-gold {
+  background: var(--gold-soft);
+  border-color: rgba(245, 197, 24, 0.3);
+}
+
+.stat-chip-gold .stat-chip-value {
+  color: var(--gold);
+}
+
+.stat-chip-amber .stat-chip-value {
+  color: var(--amber);
+}
+
+.stat-chip-red .stat-chip-value {
+  color: var(--red);
 }
 
 .history-season,

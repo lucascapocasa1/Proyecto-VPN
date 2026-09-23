@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Q, Count
 from apps.matches.models import MatchEvent, Match, MatchPlayer
 
 
@@ -74,6 +74,64 @@ def get_player_club_statistics(player, club_season=None):
         "red_cards": events.filter(event_type=MatchEvent.EventType.RED_CARD).count(),
         "mvp": events.filter(event_type=MatchEvent.EventType.MVP).count(),
     }
+
+
+EMPTY_CLUB_STATS = {
+    "matches_played": 0,
+    "goals": 0,
+    "assists": 0,
+    "mvp": 0,
+    "yellow_cards": 0,
+    "red_cards": 0,
+}
+
+
+def get_player_stats_by_club_season(player):
+    """
+    Player statistics grouped by club_season.
+    Returns {club_season_id: {matches_played, goals, assists, mvp, yellow_cards, red_cards}}.
+    Two aggregated queries total.
+    """
+    events = (
+        MatchEvent.objects.filter(
+            match_player__player=player,
+            match__status=Match.Status.FINISHED,
+        )
+        .order_by()
+        .values("match_player__club_season_id")
+        .annotate(
+            goals=Count("id", filter=Q(event_type=MatchEvent.EventType.GOAL)),
+            assists=Count("id", filter=Q(event_type=MatchEvent.EventType.ASSIST)),
+            mvp=Count("id", filter=Q(event_type=MatchEvent.EventType.MVP)),
+            yellow_cards=Count("id", filter=Q(event_type=MatchEvent.EventType.YELLOW_CARD)),
+            red_cards=Count("id", filter=Q(event_type=MatchEvent.EventType.RED_CARD)),
+        )
+    )
+
+    matches = (
+        MatchPlayer.objects.filter(
+            player=player,
+            match__status=Match.Status.FINISHED,
+        )
+        .order_by()
+        .values("club_season_id")
+        .annotate(matches_played=Count("match", distinct=True))
+    )
+
+    result = {}
+    for row in events:
+        club_season_id = row["match_player__club_season_id"]
+        stats = dict(EMPTY_CLUB_STATS)
+        stats.update({k: v for k, v in row.items() if k != "match_player__club_season_id"})
+        result[club_season_id] = stats
+
+    for row in matches:
+        club_season_id = row["club_season_id"]
+        if club_season_id not in result:
+            result[club_season_id] = dict(EMPTY_CLUB_STATS)
+        result[club_season_id]["matches_played"] = row["matches_played"]
+
+    return result
 
 
 def get_club_statistics(club, season=None, division=None):

@@ -120,7 +120,7 @@ export default function Standings() {
               <p>{s.league_name}</p>
               <div style={{ marginTop: "var(--space-2)" }}>
                 <span className={`badge ${s.status === "FINISHED" ? "badge-muted" : s.status === "ACTIVE" ? "badge-green" : "badge-accent"}`}>
-                  {s.status === "FINISHED" ? "Finalizada" : s.status === "ACTIVE" ? "Activa" : "Proxima"}
+                  {s.status === "FINISHED" ? "Finalizada" : s.status === "ACTIVE" ? "En juego" : "Proxima"}
                 </span>
               </div>
             </Link>

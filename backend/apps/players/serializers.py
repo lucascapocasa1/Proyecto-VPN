@@ -15,15 +15,29 @@ class PlayerClubHistorySerializer(serializers.ModelSerializer):
     club_name = serializers.CharField(source="club_season.club.name", read_only=True)
     season_name = serializers.CharField(source="club_season.season.name", read_only=True)
     division_name = serializers.CharField(source="club_season.division.name", read_only=True)
+    game_name = serializers.CharField(source="club_season.season.game.name", read_only=True, default=None)
     is_current = serializers.BooleanField(read_only=True)
+    stats = serializers.SerializerMethodField()
 
     class Meta:
         model = PlayerClubHistory
         fields = [
             "id", "player", "club_season", "joined_at", "left_at",
-            "club_name", "season_name", "division_name", "is_current",
+            "club_name", "season_name", "division_name", "game_name",
+            "is_current", "stats",
         ]
         read_only_fields = ["id"]
+
+    def get_stats(self, obj):
+        from apps.statistics.services import get_player_stats_by_club_season, EMPTY_CLUB_STATS
+
+        cache = getattr(self, "_stats_cache", None)
+        if cache is None:
+            cache = {}
+            self._stats_cache = cache
+        if obj.player_id not in cache:
+            cache[obj.player_id] = get_player_stats_by_club_season(obj.player)
+        return cache[obj.player_id].get(obj.club_season_id, dict(EMPTY_CLUB_STATS))
 
 
 class PlayerSerializer(serializers.ModelSerializer):

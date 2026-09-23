@@ -22,7 +22,9 @@ export default function MatchCard({ match, showDivision = true }: MatchCardProps
       <div className="match-card-header">
         <span>{showDivision ? match.division_name : ""}</span>
         <span>
-          {match.date ? new Date(match.date).toLocaleDateString("es-AR") : ""}
+          {match.date
+            ? new Date(`${match.date}T00:00:00`).toLocaleDateString("es-AR")
+            : ""}
         </span>
       </div>
       <div className="match-card-body">

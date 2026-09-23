@@ -100,7 +100,7 @@ export const playersApi = {
 
 // Matches
 export const matchesApi = {
-  list: (params?: { season?: number; division?: number; status?: string }) =>
+  list: (params?: { season?: number | string; division?: number | string; status?: string; page_size?: number | string }) =>
     api.get<PaginatedResponse<Match>>("/matches/", { params }),
   get: (id: number) => api.get<MatchDetail>(`/matches/${id}/`),
   create: (data: {
@@ -129,7 +129,7 @@ export const matchEventsApi = {
 
 // Standings
 export const standingsApi = {
-  list: (params?: { season?: number; division?: number }) =>
+  list: (params?: { season?: number; division?: number; page_size?: number }) =>
     api.get<PaginatedResponse<Standing>>("/standings/", { params }),
   recalculate: (seasonId: number, divisionId?: number) =>
     api.post("/standings/recalculate/", { season_id: seasonId, division_id: divisionId }),

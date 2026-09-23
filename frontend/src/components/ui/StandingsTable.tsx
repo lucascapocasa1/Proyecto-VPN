@@ -5,6 +5,24 @@ interface StandingsTableProps {
   standings: Standing[];
 }
 
+const ZONE_CLASS: Record<string, string> = {
+  "CAMPEÓN": "zone-campeon",
+  "REDUCIDO": "zone-reducido",
+  "PROMOCIÓN": "zone-promocion",
+  "DESCENSO": "zone-descenso",
+};
+
+const ZONE_LABEL: Record<string, string> = {
+  "CAMPEÓN": "Campeón",
+  "REDUCIDO": "Reducido",
+  "PROMOCIÓN": "Promoción",
+  "DESCENSO": "Descenso",
+};
+
+function zoneClass(zone: string | null): string {
+  return zone ? ZONE_CLASS[zone] || "" : "";
+}
+
 export default function StandingsTable({ standings }: StandingsTableProps) {
   return (
     <div className="table-container">
@@ -13,6 +31,7 @@ export default function StandingsTable({ standings }: StandingsTableProps) {
           <tr>
             <th className="col-pos">#</th>
             <th className="col-club">Club</th>
+            <th className="col-zone">Zona</th>
             <th className="col-num">PJ</th>
             <th className="col-num">G</th>
             <th className="col-num">E</th>
@@ -25,12 +44,22 @@ export default function StandingsTable({ standings }: StandingsTableProps) {
         </thead>
         <tbody>
           {standings.map((s) => (
-            <tr key={s.id}>
+            <tr
+              key={s.id}
+              className={s.zone ? `zone-row ${zoneClass(s.zone)}` : undefined}
+            >
               <td className="col-pos">{s.position}</td>
               <td className="col-club">
                 <Link to={`/clubs/${s.club_season}`} style={{ color: "inherit" }}>
                   {s.club_name}
                 </Link>
+              </td>
+              <td className="col-zone">
+                {s.zone && (
+                  <span className={`zone-badge ${zoneClass(s.zone)}`}>
+                    {ZONE_LABEL[s.zone] || s.zone}
+                  </span>
+                )}
               </td>
               <td className="col-num">{s.played}</td>
               <td className="col-num">{s.won}</td>

@@ -1,15 +1,25 @@
 import random
-import itertools
 from datetime import timedelta
 from django.utils import timezone
 from django.core.management.base import BaseCommand
 from apps.accounts.models import User
 from apps.competitions.models import Country, Game, CompetitionFormat, League, Season, Division
 from apps.clubs.models import Club, ClubSeason, ClubTitle
-from apps.players.models import Player, PlayerIdentityHistory, PlayerClubHistory
-from apps.matches.models import Matchday, Match, MatchPlayer, MatchEvent
-from apps.standings.models import Standing
+from apps.players.models import Player, PlayerClubHistory
 from apps.standings.services import recalculate_standings
+from apps.standings.management.commands._seed_helpers import (
+    S1_MATCHDAYS,
+    S2_PLAYED_MATCHDAYS,
+    S2_TOTAL_MATCHDAYS,
+    s1_matchday_date,
+    s2_matchday_date,
+    joined_at_s1,
+    left_at_s1,
+    joined_at_s2,
+    create_matchdays,
+    apply_transfers,
+    pick_forced_transfer_ids,
+)
 
 
 CLUB_NAMES_ARG = [
@@ -166,7 +176,7 @@ class Command(BaseCommand):
         )
         season2 = Season.objects.create(
             name="Temporada 2", league=league, game=self.ea_fc_26,
-            number=2, format=self.rr_format, status=Season.Status.UPCOMING,
+            number=2, format=self.rr_format, status=Season.Status.ACTIVE,
         )
 
         primera_s1 = Division.objects.create(
@@ -238,8 +248,8 @@ class Command(BaseCommand):
             for p in club_players:
                 PlayerClubHistory.objects.create(
                     player=p, club_season=cs,
-                    joined_at=timezone.now() - timedelta(days=180),
-                    left_at=timezone.now() - timedelta(days=30),
+                    joined_at=joined_at_s1(),
+                    left_at=left_at_s1(),
                 )
 
         all_cs_s2 = cs_s2_primera + cs_s2_segunda
@@ -249,16 +259,16 @@ class Command(BaseCommand):
             for p in club_players:
                 PlayerClubHistory.objects.create(
                     player=p, club_season=cs,
-                    joined_at=timezone.now() + timedelta(days=30),
+                    joined_at=joined_at_s2(),
                 )
 
         self.stdout.write(f"    S1: creating matches for Primera + Segunda...")
-        self._create_matches_for_division(
-            season1, primera_s1, cs_s1_primera, players, clubs, finished=True,
-        )
-        self._create_matches_for_division(
-            season1, segunda_s1, cs_s1_segunda, players, clubs, finished=True,
-        )
+        for div, css in [(primera_s1, cs_s1_primera), (segunda_s1, cs_s1_segunda)]:
+            created, events = create_matchdays(
+                season1, div, css, s1_matchday_date,
+                1, S1_MATCHDAYS, finished=True,
+            )
+            self.stdout.write(f"      {div.name}: {created} matches, {events} events")
 
         recalculate_standings(season1, primera_s1)
         recalculate_standings(season1, segunda_s1)
@@ -267,151 +277,29 @@ class Command(BaseCommand):
             club=clubs_primera[0], season=season1, division=primera_s1,
             title_type=ClubTitle.TitleType.CHAMPION,
             name=f"Campeón {league_name} Temporada 1",
-            awarded_at=timezone.now() - timedelta(days=15),
+            awarded_at=timezone.now() + timedelta(days=-77),
             awarded_by=self.superadmin,
         )
 
-        self.stdout.write(f"    S2: UPCOMING, no matches")
+        forced_ids = pick_forced_transfer_ids(country, season1, count=5, top_limit=10)
+        transfers = apply_transfers(country, season2, forced_player_ids=forced_ids)
+        self.stdout.write(f"    S2: {transfers} transfers ({len(forced_ids)} forced top scorers)")
 
-    def _create_matches_for_division(self, season, division, club_seasons, players, clubs, finished=True):
-        pairs = list(itertools.combinations(club_seasons, 2))
-        random.shuffle(pairs)
-
-        matchdays_needed = 19
-        pairs_per_matchday = len(pairs) // matchdays_needed
-
-        matches_created = 0
-        events_created = 0
-
-        for matchday_num in range(1, matchdays_needed + 1):
-            matchday = Matchday.objects.create(
-                season=season, division=division,
-                number=matchday_num, name=f"Jornada {matchday_num}",
-                date=timezone.now().date() + timedelta(days=matchday_num * 7),
+        self.stdout.write(f"    S2: creating matchdays 1-{S2_TOTAL_MATCHDAYS} "
+                          f"(1-10 finished, 11 scheduled)...")
+        for div, css in [(primera_s2, cs_s2_primera), (segunda_s2, cs_s2_segunda)]:
+            finished_matches, finished_events = create_matchdays(
+                season2, div, css, s2_matchday_date,
+                1, S2_PLAYED_MATCHDAYS, finished=True,
+            )
+            scheduled_matches, _ = create_matchdays(
+                season2, div, css, s2_matchday_date,
+                S2_TOTAL_MATCHDAYS, S2_TOTAL_MATCHDAYS, finished=False,
+            )
+            self.stdout.write(
+                f"      {div.name}: {finished_matches} finished "
+                f"({finished_events} events), {scheduled_matches} scheduled"
             )
 
-            start = (matchday_num - 1) * pairs_per_matchday
-            batch = pairs[start:start + pairs_per_matchday]
-
-            for home_cs, away_cs in batch:
-                home_goals = random.randint(0, 4)
-                away_goals = random.randint(0, 3)
-                match = Match.objects.create(
-                    season=season, division=division, matchday=matchday,
-                    home_club_season=home_cs, away_club_season=away_cs,
-                    home_goals=home_goals, away_goals=away_goals,
-                    status=Match.Status.FINISHED, date=matchday.date,
-                )
-                matches_created += 1
-                events_created += self._create_match_events(match, home_cs, away_cs, players, clubs)
-
-        self.stdout.write(f"      {division.name}: {matches_created} matches, {events_created} events")
-
-    def _create_match_events(self, match, home_cs, away_cs, players, clubs):
-        events_count = 0
-        used_minutes = set()
-
-        def _pick_minute():
-            m = random.randint(1, 90)
-            while m in used_minutes:
-                m = random.randint(1, 90)
-            used_minutes.add(m)
-            return m
-
-        home_idx = clubs.index(home_cs.club) * 15
-        away_idx = clubs.index(away_cs.club) * 15
-        home_players = players[home_idx:home_idx + 15]
-        away_players = players[away_idx:away_idx + 15]
-
-        home_mps, away_mps = [], []
-        for p in home_players:
-            mp = MatchPlayer.objects.create(
-                match=match, player=p, club_season=home_cs,
-                display_name=p.nickname, is_starter=True,
-            )
-            home_mps.append(mp)
-            events_count += 1
-        for p in away_players:
-            mp = MatchPlayer.objects.create(
-                match=match, player=p, club_season=away_cs,
-                display_name=p.nickname, is_starter=True,
-            )
-            away_mps.append(mp)
-            events_count += 1
-
-        def _weighted_scorer(team_mps):
-            weights = []
-            for mp in team_mps:
-                if not mp.player:
-                    continue
-                pos = mp.player.position
-                if pos == "DEL":
-                    weights.append(10)
-                elif pos == "MED":
-                    weights.append(5)
-                elif pos == "DEF":
-                    weights.append(2)
-                elif pos == "ARQ":
-                    weights.append(0.5)
-                else:
-                    weights.append(3)
-            real = [mp for mp in team_mps if mp.player]
-            if not real:
-                return None
-            return random.choices(real, weights=weights, k=1)[0]
-
-        for team_mps, goals in [(home_mps, match.home_goals), (away_mps, match.away_goals)]:
-            for _ in range(goals or 0):
-                scorer = _weighted_scorer(team_mps)
-                if not scorer:
-                    continue
-                minute = _pick_minute()
-                MatchEvent.objects.create(
-                    match=match, match_player=scorer,
-                    event_type=MatchEvent.EventType.GOAL, minute=minute,
-                )
-                events_count += 1
-                if random.random() < 0.7:
-                    real = [mp for mp in team_mps if mp.player and mp != scorer]
-                    if real:
-                        assister = random.choice(real)
-                        MatchEvent.objects.create(
-                            match=match, match_player=assister,
-                            event_type=MatchEvent.EventType.ASSIST, minute=minute,
-                        )
-                        events_count += 1
-
-        if random.random() < 0.3:
-            team = random.choice([home_mps, away_mps])
-            real = [mp for mp in team if mp.player]
-            if real:
-                MatchEvent.objects.create(
-                    match=match, match_player=random.choice(real),
-                    event_type=MatchEvent.EventType.OWN_GOAL, minute=_pick_minute(),
-                )
-                events_count += 1
-
-        for _ in range(random.randint(0, 3)):
-            team = random.choice([home_mps, away_mps])
-            real = [mp for mp in team if mp.player]
-            if real:
-                MatchEvent.objects.create(
-                    match=match, match_player=random.choice(real),
-                    event_type=random.choice([
-                        MatchEvent.EventType.YELLOW_CARD,
-                        MatchEvent.EventType.RED_CARD,
-                    ]),
-                    minute=_pick_minute(),
-                )
-                events_count += 1
-
-        mvp_team = random.choice([home_mps, away_mps])
-        real = [mp for mp in mvp_team if mp.player]
-        if real:
-            MatchEvent.objects.create(
-                match=match, match_player=random.choice(real),
-                event_type=MatchEvent.EventType.MVP, minute=90,
-            )
-            events_count += 1
-
-        return events_count
+        recalculate_standings(season2, primera_s2)
+        recalculate_standings(season2, segunda_s2)
