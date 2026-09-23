@@ -3,7 +3,7 @@ from apps.test_helpers.base import BaseTestCase
 from apps.matches.models import Matchday, Match, MatchPlayer, MatchEvent
 from apps.standings.models import Standing
 from apps.standings.services import recalculate_standings, recalculate_all_standings
-from apps.standings.zones import get_zone, ZoneType
+from apps.standings.zones import get_zone, get_zone_display, ZoneType
 from apps.clubs.models import Club, ClubSeason
 
 
@@ -137,45 +137,77 @@ class ZonesTest(TestCase):
             name="Temporada 1", league=self.league,
             game=self.ea_fc, number=1, format=self.liga_format,
         )
+        self.primera = Division.objects.create(
+            name="Primera", season=self.season, order=1, max_clubs=20,
+            promotion_zone_start=19, promotion_zone_end=19,
+            relegation_zone_start=20, relegation_zone_end=20,
+        )
         self.segunda = Division.objects.create(
             name="Segunda", season=self.season, order=2, max_clubs=20,
             playoff_zone_start=2, playoff_zone_end=9,
-            promotion_zone_start=1, promotion_zone_end=1,
-            relegation_zone_start=18, relegation_zone_end=20,
+            promotion_zone_start=19, promotion_zone_end=19,
+            relegation_zone_start=20, relegation_zone_end=20,
         )
         self.clubs = []
-        for i in range(12):
+        for i in range(24):
             club = Club.objects.create(
                 name=f"Club {i+1}", short_name=f"C{i+1}", country=self.argentina,
             )
             self.clubs.append(club)
 
-    def test_champion_zone(self):
+    def _standing(self, division, position, offset=0):
         cs = ClubSeason.objects.create(
-            club=self.clubs[0], season=self.season, division=self.segunda,
+            club=self.clubs[offset], season=self.season, division=division,
         )
-        standing = Standing.objects.create(
-            season=self.season, division=self.segunda, club_season=cs, position=1,
+        return Standing.objects.create(
+            season=self.season, division=division, club_season=cs, position=position,
         )
-        zone = get_zone(standing)
-        self.assertEqual(zone, ZoneType.CHAMPION)
+
+    def test_champion_zone(self):
+        standing = self._standing(self.segunda, 1)
+        self.assertEqual(get_zone(standing), ZoneType.CHAMPION)
 
     def test_playoff_zone(self):
-        cs = ClubSeason.objects.create(
-            club=self.clubs[0], season=self.season, division=self.segunda,
-        )
-        standing = Standing.objects.create(
-            season=self.season, division=self.segunda, club_season=cs, position=5,
-        )
-        zone = get_zone(standing)
-        self.assertEqual(zone, ZoneType.PLAYOFF)
+        standing = self._standing(self.segunda, 5)
+        self.assertEqual(get_zone(standing), ZoneType.PLAYOFF)
 
     def test_normal_zone(self):
-        cs = ClubSeason.objects.create(
-            club=self.clubs[0], season=self.season, division=self.segunda,
-        )
-        standing = Standing.objects.create(
-            season=self.season, division=self.segunda, club_season=cs, position=12,
-        )
-        zone = get_zone(standing)
-        self.assertEqual(zone, ZoneType.NORMAL)
+        standing = self._standing(self.segunda, 12)
+        self.assertEqual(get_zone(standing), ZoneType.NORMAL)
+
+    def test_promotion_zone_segunda(self):
+        standing = self._standing(self.segunda, 19, offset=1)
+        self.assertEqual(get_zone(standing), ZoneType.PROMOTION)
+        self.assertEqual(get_zone_display(ZoneType.PROMOTION), "PROMOCIÓN")
+
+    def test_relegation_zone_segunda(self):
+        standing = self._standing(self.segunda, 20, offset=2)
+        self.assertEqual(get_zone(standing), ZoneType.RELEGATION)
+        self.assertEqual(get_zone_display(ZoneType.RELEGATION), "DESCENSO")
+
+    def test_promotion_zone_primera(self):
+        standing = self._standing(self.primera, 19, offset=3)
+        self.assertEqual(get_zone(standing), ZoneType.PROMOTION)
+
+    def test_relegation_zone_primera(self):
+        standing = self._standing(self.primera, 20, offset=4)
+        self.assertEqual(get_zone(standing), ZoneType.RELEGATION)
+
+    def test_primera_has_no_playoff(self):
+        standing = self._standing(self.primera, 5, offset=5)
+        self.assertEqual(get_zone(standing), ZoneType.NORMAL)
+
+    def test_primera_champion_zone(self):
+        standing = self._standing(self.primera, 1, offset=6)
+        self.assertEqual(get_zone(standing), ZoneType.CHAMPION)
+
+    def test_zone_displays_match_frontend_keys(self):
+        expected = {
+            ZoneType.CHAMPION: "CAMPEÓN",
+            ZoneType.PLAYOFF: "REDUCIDO",
+            ZoneType.PROMOTION: "PROMOCIÓN",
+            ZoneType.RELEGATION: "DESCENSO",
+            ZoneType.NORMAL: None,
+        }
+        for zone, display in expected.items():
+            self.assertEqual(get_zone_display(zone), display)

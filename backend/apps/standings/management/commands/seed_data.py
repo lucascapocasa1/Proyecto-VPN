@@ -6,6 +6,7 @@ from apps.accounts.models import User
 from apps.competitions.models import Country, Game, CompetitionFormat, League, Season, Division
 from apps.clubs.models import Club, ClubSeason, ClubTitle
 from apps.players.models import Player, PlayerClubHistory
+from apps.standings.models import Standing
 from apps.standings.services import recalculate_standings
 from apps.standings.management.commands._seed_helpers import (
     S1_MATCHDAYS,
@@ -182,26 +183,28 @@ class Command(BaseCommand):
         primera_s1 = Division.objects.create(
             name="Primera División", season=season1, order=1, max_clubs=20,
             has_relegation=True,
-            relegation_zone_start=19, relegation_zone_end=20,
+            promotion_zone_start=19, promotion_zone_end=19,
+            relegation_zone_start=20, relegation_zone_end=20,
         )
         segunda_s1 = Division.objects.create(
             name="Segunda División", season=season1, order=2, max_clubs=20,
             has_relegation=True,
             playoff_zone_start=2, playoff_zone_end=9,
-            promotion_zone_start=1, promotion_zone_end=1,
-            relegation_zone_start=19, relegation_zone_end=20,
+            promotion_zone_start=19, promotion_zone_end=19,
+            relegation_zone_start=20, relegation_zone_end=20,
         )
         primera_s2 = Division.objects.create(
             name="Primera División", season=season2, order=1, max_clubs=20,
             has_relegation=True,
-            relegation_zone_start=19, relegation_zone_end=20,
+            promotion_zone_start=19, promotion_zone_end=19,
+            relegation_zone_start=20, relegation_zone_end=20,
         )
         segunda_s2 = Division.objects.create(
             name="Segunda División", season=season2, order=2, max_clubs=20,
             has_relegation=True,
             playoff_zone_start=2, playoff_zone_end=9,
-            promotion_zone_start=1, promotion_zone_end=1,
-            relegation_zone_start=19, relegation_zone_end=20,
+            promotion_zone_start=19, promotion_zone_end=19,
+            relegation_zone_start=20, relegation_zone_end=20,
         )
 
         clubs = []
@@ -273,8 +276,30 @@ class Command(BaseCommand):
         recalculate_standings(season1, primera_s1)
         recalculate_standings(season1, segunda_s1)
 
+        champion = Standing.objects.get(
+            season=season1, division=primera_s1, position=1
+        ).club_season.club
+        relegated = Standing.objects.get(
+            season=season1, division=primera_s1, position=20
+        ).club_season.club
+        promoted = Standing.objects.get(
+            season=season1, division=segunda_s1, position=1
+        ).club_season.club
+
+        cs_down = ClubSeason.objects.get(club=relegated, season=season2)
+        cs_down.division = segunda_s2
+        cs_down.status = ClubSeason.Status.RELEGATED
+        cs_down.save(update_fields=["division", "status"])
+        cs_up = ClubSeason.objects.get(club=promoted, season=season2)
+        cs_up.division = primera_s2
+        cs_up.status = ClubSeason.Status.PROMOTED
+        cs_up.save(update_fields=["division", "status"])
+        self.stdout.write(
+            f"    S2 transitions: {relegated.name} down, {promoted.name} up"
+        )
+
         ClubTitle.objects.create(
-            club=clubs_primera[0], season=season1, division=primera_s1,
+            club=champion, season=season1, division=primera_s1,
             title_type=ClubTitle.TitleType.CHAMPION,
             name=f"Campeón {league_name} Temporada 1",
             awarded_at=timezone.now() + timedelta(days=-77),
@@ -287,7 +312,8 @@ class Command(BaseCommand):
 
         self.stdout.write(f"    S2: creating matchdays 1-{S2_TOTAL_MATCHDAYS} "
                           f"(1-10 finished, 11 scheduled)...")
-        for div, css in [(primera_s2, cs_s2_primera), (segunda_s2, cs_s2_segunda)]:
+        for div in [primera_s2, segunda_s2]:
+            css = list(div.club_seasons.all().order_by("id"))
             finished_matches, finished_events = create_matchdays(
                 season2, div, css, s2_matchday_date,
                 1, S2_PLAYED_MATCHDAYS, finished=True,
