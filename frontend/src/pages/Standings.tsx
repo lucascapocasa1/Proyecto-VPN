@@ -6,7 +6,7 @@ import StandingsTable from "../components/ui/StandingsTable";
 import Loading from "../components/ui/Loading";
 import ErrorMessage from "../components/ui/ErrorMessage";
 import Breadcrumb from "../components/ui/Breadcrumb";
-import { useAuth } from "../context/AuthContext";
+import { useCanEdit } from "../hooks/useCanEdit";
 
 export default function Standings() {
   const { seasonId, divisionId } = useParams<{ seasonId: string; divisionId: string }>();
@@ -18,9 +18,8 @@ export default function Standings() {
   const [error, setError] = useState<string | null>(null);
   const [recalculating, setRecalculating] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
-  const { user } = useAuth();
 
-  const canRecalculate = user?.role === "SUPERADMIN" || user?.role === "ADMIN_LIGA";
+  const canRecalculate = useCanEdit();
 
   const fetchSeasonData = useCallback(() => {
     if (!seasonId) {

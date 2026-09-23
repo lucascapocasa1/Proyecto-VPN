@@ -138,7 +138,7 @@ class MatchPlayer(models.Model):
     class Meta:
         verbose_name = "Jugador del Partido"
         verbose_name_plural = "Jugadores del Partido"
-        ordering = ["match", "club_season", "-is_starter"]
+        ordering = ["id"]
 
     def __str__(self):
         return f"{self.display_name} - {self.match}"

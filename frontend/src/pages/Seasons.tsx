@@ -5,6 +5,7 @@ import type { SeasonList, League } from "../types";
 import Loading from "../components/ui/Loading";
 import ErrorMessage from "../components/ui/ErrorMessage";
 import SearchBar from "../components/ui/SearchBar";
+import { useCanEdit } from "../hooks/useCanEdit";
 
 const STATUS_BADGES: Record<string, string> = {
   ACTIVE: "badge-green",
@@ -21,6 +22,7 @@ const STATUS_LABELS: Record<string, string> = {
 export default function Seasons() {
   const [searchParams] = useSearchParams();
   const leagueFilter = searchParams.get("league");
+  const canEdit = useCanEdit();
 
   const [seasons, setSeasons] = useState<SeasonList[]>([]);
   const [leagues, setLeagues] = useState<League[]>([]);
@@ -28,6 +30,25 @@ export default function Seasons() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const abortRef = useRef<AbortController | null>(null);
+
+  const updateSeason = async (season: SeasonList, patch: Partial<SeasonList>) => {
+    try {
+      const res = await seasonsApi.update(season.id, patch);
+      setSeasons((prev) =>
+        prev.map((s) =>
+          s.id === season.id
+            ? {
+                ...s,
+                name: res.data.name,
+                status: res.data.status,
+              }
+            : s
+        )
+      );
+    } catch {
+      setError("Error al actualizar temporada");
+    }
+  };
 
   const fetchData = () => {
     abortRef.current?.abort();
@@ -90,15 +111,21 @@ export default function Seasons() {
 
       <div className="card-grid">
         {filtered.map((season) => (
-          <Link
-            key={season.id}
-            to={`/standings/${season.id}`}
-            className="card"
-            style={{ textDecoration: "none", color: "inherit" }}
-          >
-            <h3>{season.name}</h3>
+          <div key={season.id} className="card">
+            <h3>
+              <Link to={`/standings/${season.id}`} style={{ color: "inherit" }}>
+                {season.name}
+              </Link>
+            </h3>
             <p>{season.league_name}</p>
-            <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-2)", flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: "var(--space-2)",
+                marginTop: "var(--space-2)",
+                flexWrap: "wrap",
+              }}
+            >
               <span className={`badge ${STATUS_BADGES[season.status] || "badge-muted"}`}>
                 {STATUS_LABELS[season.status] || season.status}
               </span>
@@ -106,7 +133,37 @@ export default function Seasons() {
                 <span className="badge badge-muted">{season.game_name}</span>
               )}
             </div>
-          </Link>
+            {canEdit && (
+              <div className="season-edit">
+                <select
+                  className="filter-select"
+                  value={season.status}
+                  onChange={(e) =>
+                    updateSeason(season, { status: e.target.value as SeasonList["status"] })
+                  }
+                >
+                  <option value="ACTIVE">En juego</option>
+                  <option value="FINISHED">Finalizada</option>
+                  <option value="UPCOMING">Proxima</option>
+                </select>
+                <input
+                  type="text"
+                  className="season-name-input"
+                  defaultValue={season.name}
+                  aria-label="Nombre de temporada"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                  }}
+                  onBlur={(e) => {
+                    const value = e.target.value.trim();
+                    if (value && value !== season.name) {
+                      updateSeason(season, { name: value });
+                    }
+                  }}
+                />
+              </div>
+            )}
+          </div>
         ))}
       </div>
 

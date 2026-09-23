@@ -5,6 +5,7 @@ from .zones import get_zone, get_zone_display
 
 class StandingSerializer(serializers.ModelSerializer):
     club_name = serializers.CharField(source="club_season.club.name", read_only=True)
+    club = serializers.IntegerField(source="club_season.club_id", read_only=True)
     season_name = serializers.CharField(source="season.name", read_only=True)
     division_name = serializers.CharField(source="division.name", read_only=True)
     zone = serializers.SerializerMethodField()
@@ -16,7 +17,7 @@ class StandingSerializer(serializers.ModelSerializer):
             "played", "won", "drawn", "lost",
             "goals_for", "goals_against", "goal_difference",
             "points", "position", "updated_at",
-            "club_name", "season_name", "division_name", "zone",
+            "club_name", "club", "season_name", "division_name", "zone",
         ]
 
     def get_zone(self, obj):

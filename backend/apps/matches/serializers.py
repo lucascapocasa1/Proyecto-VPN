@@ -73,7 +73,15 @@ class MatchSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "updated_at"]
 
     def validate(self, data):
-        if data.get("home_club_season") == data.get("away_club_season"):
+        home = data.get(
+            "home_club_season",
+            self.instance.home_club_season if self.instance else None,
+        )
+        away = data.get(
+            "away_club_season",
+            self.instance.away_club_season if self.instance else None,
+        )
+        if home is not None and away is not None and home == away:
             raise serializers.ValidationError("Local y visitante deben ser diferentes.")
         return data
 

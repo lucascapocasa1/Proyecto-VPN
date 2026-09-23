@@ -11,7 +11,9 @@ import ClubProfile from "./pages/ClubProfile";
 import Players from "./pages/Players";
 import PlayerProfile from "./pages/PlayerProfile";
 import Matches from "./pages/Matches";
+import MatchDetail from "./pages/MatchDetail";
 import Statistics from "./pages/Statistics";
+import Transfers from "./pages/Transfers";
 import Login from "./pages/Login";
 import "./App.css";
 
@@ -25,6 +27,7 @@ function App() {
             <Route path="countries" element={<Countries />} />
             <Route path="leagues" element={<Leagues />} />
             <Route path="seasons" element={<Seasons />} />
+            <Route path="standings" element={<Standings />} />
             <Route path="standings/:seasonId" element={<Standings />} />
             <Route path="standings/:seasonId/:divisionId" element={<Standings />} />
             <Route path="clubs" element={<Clubs />} />
@@ -32,6 +35,8 @@ function App() {
             <Route path="players" element={<Players />} />
             <Route path="players/:id" element={<PlayerProfile />} />
             <Route path="matches" element={<Matches />} />
+            <Route path="matches/:id" element={<MatchDetail />} />
+            <Route path="transfers" element={<Transfers />} />
             <Route path="statistics" element={<Statistics />} />
             <Route path="login" element={<Login />} />
           </Route>

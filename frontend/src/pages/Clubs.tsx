@@ -6,7 +6,7 @@ import Loading from "../components/ui/Loading";
 import ErrorMessage from "../components/ui/ErrorMessage";
 import SearchBar from "../components/ui/SearchBar";
 import Pagination from "../components/ui/Pagination";
-import { useAuth } from "../context/AuthContext";
+import { useCanEdit } from "../hooks/useCanEdit";
 
 const PAGE_SIZE = 20;
 
@@ -19,10 +19,9 @@ export default function Clubs() {
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const { user } = useAuth();
   const abortRef = useRef<AbortController | null>(null);
 
-  const canManage = user?.role === "SUPERADMIN";
+  const canManage = useCanEdit();
 
   const fetchClubs = useCallback(() => {
     abortRef.current?.abort();

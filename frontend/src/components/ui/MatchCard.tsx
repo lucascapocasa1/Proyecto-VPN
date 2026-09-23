@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import type { Match } from "../../types";
 
 interface MatchCardProps {
@@ -18,7 +19,11 @@ export default function MatchCard({ match, showDivision = true }: MatchCardProps
   const isFinished = match.status === "FINISHED";
 
   return (
-    <div className="match-card">
+    <Link
+      to={`/matches/${match.id}`}
+      className="match-card"
+      style={{ textDecoration: "none", color: "inherit" }}
+    >
       <div className="match-card-header">
         <span>{showDivision ? match.division_name : ""}</span>
         <span>
@@ -50,6 +55,6 @@ export default function MatchCard({ match, showDivision = true }: MatchCardProps
         </span>
         {match.matchday_name && <span>{match.matchday_name}</span>}
       </div>
-    </div>
+    </Link>
   );
 }

@@ -43,6 +43,7 @@ class ClubTitleViewSet(viewsets.ModelViewSet):
     queryset = ClubTitle.objects.select_related(
         "club", "season", "division", "awarded_by"
     ).all()
+    serializer_class = ClubTitleSerializer
     filterset_fields = ["club", "season", "division", "title_type"]
     search_fields = ["name"]
     ordering_fields = ["awarded_at", "name"]
@@ -53,3 +54,6 @@ class ClubTitleViewSet(viewsets.ModelViewSet):
         if self.action in ["list", "retrieve"]:
             return [permissions.AllowAny()]
         return [IsAdminLiga()]
+
+    def perform_create(self, serializer):
+        serializer.save(awarded_by=self.request.user)

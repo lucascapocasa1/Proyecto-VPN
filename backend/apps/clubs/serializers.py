@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 from .models import Club, ClubSeason, ClubTitle
 
@@ -33,6 +34,7 @@ class ClubTitleSerializer(serializers.ModelSerializer):
     season_name = serializers.CharField(source="season.name", read_only=True)
     division_name = serializers.CharField(source="division.name", read_only=True, default=None)
     awarded_by_username = serializers.CharField(source="awarded_by.username", read_only=True)
+    awarded_at = serializers.DateTimeField(required=False, default=timezone.now)
 
     class Meta:
         model = ClubTitle
@@ -42,7 +44,7 @@ class ClubTitleSerializer(serializers.ModelSerializer):
             "club_name", "season_name", "division_name", "awarded_by_username",
             "created_at",
         ]
-        read_only_fields = ["id", "created_at"]
+        read_only_fields = ["id", "created_at", "awarded_by"]
 
 
 class ClubDetailSerializer(serializers.ModelSerializer):

@@ -1,11 +1,24 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
-import { playersApi, statisticsApi } from "../api";
-import type { PlayerDetail } from "../types";
+import { playersApi, statisticsApi, countriesApi } from "../api";
+import type { PlayerDetail, Player, Country } from "../types";
 import Loading from "../components/ui/Loading";
 import ErrorMessage from "../components/ui/ErrorMessage";
 import Breadcrumb from "../components/ui/Breadcrumb";
 import CountryFlag from "../components/ui/CountryFlag";
+import { useCanEdit } from "../hooks/useCanEdit";
+
+function apiErrorMessage(err: unknown): string {
+  const data = (err as { response?: { data?: unknown } })?.response?.data;
+  if (!data) return "Error de conexión";
+  if (typeof data === "string") return data;
+  const obj = data as Record<string, unknown>;
+  if (typeof obj.error === "string") return obj.error;
+  const first = Object.values(obj)[0];
+  if (Array.isArray(first) && first.length > 0) return String(first[0]);
+  if (typeof first === "string") return first;
+  return "Error inesperado";
+}
 
 const POSITION_BADGE: Record<string, string> = {
   ARQ: "badge-arq",
@@ -50,10 +63,23 @@ const INITIAL_STATS: PlayerStats = {
 
 export default function PlayerProfile() {
   const { id } = useParams<{ id: string }>();
+  const canEdit = useCanEdit();
   const [player, setPlayer] = useState<PlayerDetail | null>(null);
   const [stats, setStats] = useState<PlayerStats>(INITIAL_STATS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [draft, setDraft] = useState({
+    nickname: "",
+    position: "" as Player["position"] | "",
+    platform: "" as Player["platform"] | "",
+    country: "",
+    is_active: true,
+  });
   const abortRef = useRef<AbortController | null>(null);
 
   const fetchData = () => {
@@ -101,6 +127,48 @@ export default function PlayerProfile() {
     return () => abortRef.current?.abort();
   }, [id]);
 
+  const openEdit = () => {
+    if (!player) return;
+    setDraft({
+      nickname: player.nickname,
+      position: player.position || "",
+      platform: player.platform || "",
+      country: player.country != null ? String(player.country) : "",
+      is_active: player.is_active,
+    });
+    setEditError(null);
+    setNotice(null);
+    setEditing(true);
+    if (countries.length === 0) {
+      countriesApi
+        .list()
+        .then((res) => setCountries(res.data.results || []))
+        .catch(() => {});
+    }
+  };
+
+  const savePlayer = async () => {
+    if (!player || !draft.nickname.trim()) return;
+    setSaving(true);
+    setEditError(null);
+    try {
+      const updated = await playersApi.update(player.id, {
+        nickname: draft.nickname.trim(),
+        position: draft.position || null,
+        platform: draft.platform || null,
+        country: draft.country ? Number(draft.country) : null,
+        is_active: draft.is_active,
+      });
+      setPlayer((prev) => (prev ? { ...prev, ...updated.data } : prev));
+      setEditing(false);
+      setNotice("Jugador actualizado");
+    } catch (err) {
+      setEditError(apiErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) return <Loading />;
   if (error) return <ErrorMessage message={error} onRetry={fetchData} />;
   if (!player) return <p className="empty">Jugador no encontrado</p>;
@@ -141,11 +209,12 @@ export default function PlayerProfile() {
                 <CountryFlag code={player.country_name} size="sm" /> {player.country_name}
               </span>
             )}
+            {!player.is_active && <span className="badge badge-red">Inactivo</span>}
           </div>
           {currentClub && (
             <div style={{ marginTop: "var(--space-3)" }}>
               <Link
-                to={`/clubs/${currentClub.club_season}`}
+                to={`/clubs/${currentClub.club}`}
                 className="badge badge-accent"
                 style={{ textDecoration: "none" }}
               >
@@ -154,7 +223,113 @@ export default function PlayerProfile() {
             </div>
           )}
         </div>
+        {canEdit && !editing && (
+          <button
+            className="btn btn-sm"
+            onClick={openEdit}
+            style={{ marginLeft: "auto", alignSelf: "flex-start" }}
+          >
+            Editar
+          </button>
+        )}
       </div>
+
+      {editing && (
+        <div className="profile-section">
+          <h2>Editar jugador</h2>
+          <div
+            className="transfer-form"
+            style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}
+          >
+            <div className="form-group">
+              <label>Nickname</label>
+              <input
+                type="text"
+                value={draft.nickname}
+                onChange={(e) => setDraft({ ...draft, nickname: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label>Posición</label>
+              <select
+                value={draft.position || ""}
+                onChange={(e) =>
+                  setDraft({ ...draft, position: e.target.value as Player["position"] | "" })
+                }
+              >
+                <option value="">Sin posición</option>
+                <option value="ARQ">Arquero</option>
+                <option value="DEF">Defensor</option>
+                <option value="MED">Mediocampista</option>
+                <option value="DEL">Delantero</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Plataforma</label>
+              <select
+                value={draft.platform || ""}
+                onChange={(e) =>
+                  setDraft({ ...draft, platform: e.target.value as Player["platform"] | "" })
+                }
+              >
+                <option value="">Sin plataforma</option>
+                <option value="PLAYSTATION">PlayStation</option>
+                <option value="XBOX">Xbox</option>
+                <option value="PC">PC</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>País</label>
+              <select
+                value={draft.country}
+                onChange={(e) => setDraft({ ...draft, country: e.target.value })}
+              >
+                <option value="">Sin país</option>
+                {countries.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Activo</label>
+              <input
+                type="checkbox"
+                checked={draft.is_active}
+                onChange={(e) => setDraft({ ...draft, is_active: e.target.checked })}
+              />
+            </div>
+            <div className="form-group">
+              <label>&nbsp;</label>
+              <div style={{ display: "flex", gap: "var(--space-2)" }}>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={savePlayer}
+                  disabled={saving}
+                >
+                  {saving ? "Guardando..." : "Guardar"}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setEditing(false)}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+          {editError && (
+            <p className="error-msg" style={{ textAlign: "left" }}>
+              {editError}
+            </p>
+          )}
+        </div>
+      )}
+
+      {notice && <p className="success-msg">{notice}</p>}
 
       <div className="profile-section">
         <h2>Estadísticas</h2>
@@ -194,7 +369,9 @@ export default function PlayerProfile() {
               <div key={ch.id} className={`history-item ${ch.is_current ? "history-item-current" : ""}`}>
                 <div className="history-main">
                   <span className="history-club">
-                    {ch.club_name}
+                    <Link to={`/clubs/${ch.club}`} style={{ color: "inherit" }}>
+                      {ch.club_name}
+                    </Link>
                     {ch.is_current && <span className="history-current-tag">Actual</span>}
                   </span>
                   <span className="history-context">

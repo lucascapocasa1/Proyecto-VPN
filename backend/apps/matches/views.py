@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from rest_framework import viewsets, permissions, filters
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Matchday, Match, MatchPlayer, MatchEvent
@@ -6,6 +7,12 @@ from .serializers import (
     MatchPlayerSerializer, MatchEventSerializer,
 )
 from apps.accounts.permissions import IsSuperAdmin, IsAdminLiga, CanManageLeague
+from apps.standings.services import recalculate_standings
+
+
+def _refresh_derived(match):
+    recalculate_standings(match.season, match.division)
+    cache.clear()
 
 
 class MatchdayViewSet(viewsets.ModelViewSet):
@@ -42,6 +49,19 @@ class MatchViewSet(viewsets.ModelViewSet):
             return MatchDetailSerializer
         return MatchSerializer
 
+    def perform_create(self, serializer):
+        match = serializer.save()
+        _refresh_derived(match)
+
+    def perform_update(self, serializer):
+        match = serializer.save()
+        _refresh_derived(match)
+
+    def perform_destroy(self, instance):
+        match = instance
+        super().perform_destroy(instance)
+        _refresh_derived(match)
+
 
 class MatchPlayerViewSet(viewsets.ModelViewSet):
     queryset = MatchPlayer.objects.select_related(
@@ -55,6 +75,18 @@ class MatchPlayerViewSet(viewsets.ModelViewSet):
         if self.action in ["list", "retrieve"]:
             return [permissions.AllowAny()]
         return [IsAdminLiga()]
+
+    def perform_create(self, serializer):
+        serializer.save()
+        cache.clear()
+
+    def perform_update(self, serializer):
+        serializer.save()
+        cache.clear()
+
+    def perform_destroy(self, instance):
+        super().perform_destroy(instance)
+        cache.clear()
 
 
 class MatchEventViewSet(viewsets.ModelViewSet):
@@ -70,3 +102,15 @@ class MatchEventViewSet(viewsets.ModelViewSet):
         if self.action in ["list", "retrieve"]:
             return [permissions.AllowAny()]
         return [IsAdminLiga()]
+
+    def perform_create(self, serializer):
+        serializer.save()
+        cache.clear()
+
+    def perform_update(self, serializer):
+        serializer.save()
+        cache.clear()
+
+    def perform_destroy(self, instance):
+        super().perform_destroy(instance)
+        cache.clear()

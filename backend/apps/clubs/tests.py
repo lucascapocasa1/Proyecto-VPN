@@ -1,8 +1,10 @@
 from django.utils import timezone
 from django.test import TestCase
+from rest_framework.test import APIClient
 from apps.competitions.models import Country, Game, CompetitionFormat, Season, League, Division
 from apps.clubs.models import Club, ClubSeason, ClubTitle
 from apps.accounts.models import User
+from apps.test_helpers.base import BaseTestCase
 
 
 class BaseClubTestCase(TestCase):
@@ -101,3 +103,55 @@ class ClubTitleTest(BaseClubTestCase):
         )
         titles = ClubTitle.objects.filter(club=self.club)
         self.assertEqual(titles.count(), 2)
+
+
+class ClubTitleApiTest(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.client = APIClient()
+
+    def test_anonymous_can_list_titles(self):
+        resp = self.client.get("/api/club-titles/")
+        self.assertEqual(resp.status_code, 200)
+
+    def test_player_cannot_create_title(self):
+        self.client.force_authenticate(self.player_user)
+        resp = self.client.post(
+            "/api/club-titles/",
+            {
+                "club": self.clubs[0].id,
+                "season": self.season.id,
+                "title_type": "CHAMPION",
+                "name": "Campeón",
+            },
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 403)
+
+    def test_admin_liga_creates_title_with_awarded_by(self):
+        self.client.force_authenticate(self.admin_liga_user)
+        resp = self.client.post(
+            "/api/club-titles/",
+            {
+                "club": self.clubs[0].id,
+                "season": self.season.id,
+                "title_type": "CHAMPION",
+                "name": "Campeón Temporada 1",
+            },
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 201, resp.data)
+        title = ClubTitle.objects.get(pk=resp.data["id"])
+        self.assertEqual(title.awarded_by, self.admin_liga_user)
+        self.assertIsNotNone(title.awarded_at)
+
+    def test_admin_liga_can_delete_title(self):
+        title = ClubTitle.objects.create(
+            club=self.clubs[0], season=self.season,
+            title_type=ClubTitle.TitleType.CHAMPION, name="Campeón",
+            awarded_at=timezone.now(), awarded_by=self.superadmin,
+        )
+        self.client.force_authenticate(self.admin_liga_user)
+        resp = self.client.delete(f"/api/club-titles/{title.id}/")
+        self.assertEqual(resp.status_code, 204)
+        self.assertFalse(ClubTitle.objects.filter(pk=title.id).exists())

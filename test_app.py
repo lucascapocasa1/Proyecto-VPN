@@ -1,5 +1,8 @@
 ﻿from playwright.sync_api import sync_playwright
 import os
+import sys
+
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 SCREENSHOTS_DIR = "C:/Users/Capocasa/Desktop/PROYECTO VPN/test_screenshots"
 os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
@@ -82,6 +85,7 @@ with sync_playwright() as p:
         ("/", "Home"), ("/countries", "Countries"), ("/leagues", "Leagues"),
         ("/seasons", "Seasons"), ("/standings", "Standings"), ("/clubs", "Clubs"),
         ("/players", "Players"), ("/matches", "Matches"), ("/statistics", "Statistics"),
+        ("/transfers", "Transfers"),
     ]
     for path, name in pages_to_test:
         console_errors.clear()
@@ -105,6 +109,32 @@ with sync_playwright() as p:
         print(f"  Health: {api_content[:200]}")
     except Exception as e:
         errors.append(f"API health failed: {e}")
+        print(f"  ERROR: {e}")
+
+    print("\n=== Test 5b: Match detail page ===")
+    console_errors.clear()
+    try:
+        page.goto("http://localhost:5173/matches", timeout=10000)
+        page.wait_for_load_state("networkidle", timeout=10000)
+        cards = page.locator("a.match-card")
+        count = cards.count()
+        print(f"  Match cards: {count}")
+        if count == 0:
+            errors.append("Match detail: no match cards found")
+        else:
+            cards.first.click()
+            page.wait_for_load_state("networkidle", timeout=10000)
+            page.wait_for_timeout(1000)
+            page.screenshot(path=f"{SCREENSHOTS_DIR}/06_match_detail.png", full_page=True)
+            print(f"  Detail URL: {page.url}")
+            if "/matches/" not in page.url:
+                errors.append("Match detail navigation failed")
+            if console_errors:
+                for err in console_errors:
+                    print(f"    Console: {err}")
+                    errors.append(f"MatchDetail: {err}")
+    except Exception as e:
+        errors.append(f"Match detail failed: {e}")
         print(f"  ERROR: {e}")
 
     print("\n=== Test 6: Nav links ===")

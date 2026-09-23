@@ -137,7 +137,7 @@ export default function Home() {
               {standings.slice(0, 8).map((s, i) => (
                 <Link
                   key={s.id}
-                  to={`/clubs/${s.club_season}`}
+                  to={`/clubs/${s.club}`}
                   className="top-item"
                 >
                   <span className="top-position">{i + 1}</span>
