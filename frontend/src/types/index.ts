@@ -156,6 +156,8 @@ export interface PlayerClubHistory {
   joined_at: string;
   left_at: string | null;
   club_name: string;
+  club: number;
+  player_nickname: string;
   season_name: string;
   division_name: string;
   game_name: string | null;
@@ -240,6 +242,7 @@ export interface Standing {
   position: number;
   updated_at: string;
   club_name: string;
+  club: number;
   season_name: string;
   division_name: string;
   zone: string | null;
@@ -250,6 +253,26 @@ export interface PaginatedResponse<T> {
   next: string | null;
   previous: string | null;
   results: T[];
+}
+
+export interface Transfer {
+  id: number;
+  player: number;
+  from_club_season: number | null;
+  to_club_season: number;
+  date: string;
+  registered_by: number | null;
+  created_at: string;
+  player_name: string;
+  from_club_name: string | null;
+  from_division_name: string | null;
+  from_season_name: string | null;
+  to_club_name: string;
+  to_division_name: string;
+  to_season_name: string;
+  registered_by_username: string | null;
+  from_club: number | null;
+  to_club: number;
 }
 
 export interface User {

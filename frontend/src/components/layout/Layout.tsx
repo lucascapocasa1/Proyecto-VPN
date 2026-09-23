@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { path: "/clubs", label: "Clubes" },
   { path: "/players", label: "Jugadores" },
   { path: "/matches", label: "Partidos" },
+  { path: "/transfers", label: "Mercado" },
   { path: "/statistics", label: "Estadisticas" },
 ];
 

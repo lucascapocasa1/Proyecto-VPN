@@ -1669,6 +1669,253 @@ a:hover {
 }
 
 /* ============================================
+   TRANSFER MARKET
+   ============================================ */
+
+.transfer-form {
+  display: grid;
+  grid-template-columns: 2fr 1.3fr 1.6fr 1fr auto;
+  gap: var(--space-3);
+  align-items: end;
+  padding: var(--space-4);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: var(--space-4);
+}
+
+.transfer-form .form-group {
+  margin-bottom: 0;
+}
+
+.transfer-form .btn {
+  height: fit-content;
+  white-space: nowrap;
+}
+
+.form-readonly {
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-void);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  min-height: 33px;
+  display: flex;
+  align-items: center;
+}
+
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.search-dropdown button {
+  display: block;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.search-dropdown button:hover {
+  background: var(--bg-hover);
+}
+
+.success-msg {
+  color: var(--accent);
+  font-size: 0.8125rem;
+  margin-bottom: var(--space-4);
+}
+
+.form-group input[type="checkbox"] {
+  width: auto;
+  margin-top: var(--space-1);
+  cursor: pointer;
+}
+
+/* ============================================
+   MATCH DETAIL
+   ============================================ */
+
+.match-detail-hero {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+.match-detail-meta {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: var(--space-5);
+}
+
+.match-detail-scoreboard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.match-detail-scoreboard .match-team {
+  flex: 1;
+}
+
+.match-detail-scoreboard .match-team-name {
+  font-size: 1.5rem;
+}
+
+.match-detail-scoreboard .score {
+  font-size: 3rem;
+  padding: var(--space-2) var(--space-5);
+}
+
+.match-detail-info {
+  text-align: center;
+  margin-top: var(--space-4);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.match-detail-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+}
+
+.lineup-club {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin: var(--space-3) 0 var(--space-2);
+}
+
+.lineup-item-actions {
+  margin-left: auto;
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.event-minute {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  min-width: 36px;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.event-player {
+  font-weight: 600;
+  flex: 1;
+  font-size: 0.875rem;
+}
+
+.event-club {
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+}
+
+.event-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.event-edit-row {
+  gap: var(--space-2);
+}
+
+.event-edit-row select,
+.event-edit-row input {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-void);
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 768px) {
+  .match-detail-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .match-detail-scoreboard {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .match-detail-scoreboard .match-team {
+    text-align: center;
+  }
+
+  .match-detail-scoreboard .match-team-name {
+    font-size: 1.25rem;
+  }
+
+  .match-detail-scoreboard .score {
+    font-size: 2rem;
+  }
+}
+
+/* ============================================
+   SEASON INLINE EDIT
+   ============================================ */
+
+.season-edit {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.season-edit .filter-select {
+  flex: 0 0 auto;
+  font-size: 0.8125rem;
+}
+
+.season-name-input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-void);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+}
+
+.season-name-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+/* ============================================
    PAGINATION
    ============================================ */
 
@@ -2185,6 +2432,10 @@ a:hover {
 }
 
 @media (max-width: 768px) {
+  .transfer-form {
+    grid-template-columns: 1fr;
+  }
+
   .header-inner {
     flex-wrap: wrap;
     height: auto;

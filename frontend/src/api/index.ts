@@ -2,10 +2,10 @@ import api from "./client";
 import type {
   Country, Game, League, Season, SeasonList, Division,
   Club, ClubDetail, ClubSeason, ClubTitle,
-  Player, PlayerDetail,
+  Player, PlayerDetail, PlayerClubHistory,
   Match, MatchDetail, MatchPlayer, MatchEvent,
   Standing, PaginatedResponse,
-  TopScorer, TopAssist, TopMVP, User,
+  TopScorer, TopAssist, TopMVP, User, Transfer,
 } from "../types";
 
 // Auth
@@ -53,6 +53,8 @@ export const seasonsApi = {
   get: (id: number) => api.get<Season>(`/seasons/${id}/`),
   create: (data: { name: string; league: number; game: number; format: number; status?: string }) =>
     api.post<Season>("/seasons/", data),
+  update: (id: number, data: Partial<SeasonList>) =>
+    api.patch<Season>(`/seasons/${id}/`, data),
 };
 
 // Divisions
@@ -77,25 +79,45 @@ export const clubsApi = {
 
 // Club Seasons
 export const clubSeasonsApi = {
-  list: (params?: { season?: number; division?: number }) =>
+  list: (params?: { season?: number; division?: number; page_size?: number }) =>
     api.get<PaginatedResponse<ClubSeason>>("/club-seasons/", { params }),
+  get: (id: number) => api.get<ClubSeason>(`/club-seasons/${id}/`),
 };
 
 // Club Titles
 export const clubTitlesApi = {
   list: (params?: { club?: number; season?: number }) =>
     api.get<PaginatedResponse<ClubTitle>>("/club-titles/", { params }),
+  create: (data: { club: number; season: number; division?: number; title_type: string; name: string }) =>
+    api.post<ClubTitle>("/club-titles/", data),
+  delete: (id: number) => api.delete(`/club-titles/${id}/`),
+};
+
+// Player Club History
+export const playerClubHistoryApi = {
+  list: (params?: { player?: number; club_season?: number; page_size?: number }) =>
+    api.get<PaginatedResponse<PlayerClubHistory>>("/player-club-history/", { params }),
 };
 
 // Players
 export const playersApi = {
-  list: () => api.get<PaginatedResponse<Player>>("/players/"),
+  list: (params?: { search?: string; page_size?: number }) =>
+    api.get<PaginatedResponse<Player>>("/players/", { params }),
   get: (id: number) => api.get<PlayerDetail>(`/players/${id}/`),
   create: (data: { nickname: string; platform?: string; country?: number }) =>
     api.post<Player>("/players/", data),
   update: (id: number, data: Partial<Player>) =>
     api.patch<Player>(`/players/${id}/`, data),
   delete: (id: number) => api.delete(`/players/${id}/`),
+};
+
+// Transfers
+export const transfersApi = {
+  list: (params?: { season?: number | string; player?: number; page_size?: number }) =>
+    api.get<PaginatedResponse<Transfer>>("/transfers/", { params }),
+  create: (data: { player: number; to_club_season: number; date?: string }) =>
+    api.post<Transfer>("/transfers/", data),
+  delete: (id: number) => api.delete(`/transfers/${id}/`),
 };
 
 // Matches
@@ -115,7 +137,7 @@ export const matchesApi = {
 
 // Match Players
 export const matchPlayersApi = {
-  create: (data: { match: number; player?: number; club_season: number; display_name: string }) =>
+  create: (data: { match: number; player?: number; club_season: number; display_name: string; is_starter?: boolean }) =>
     api.post<MatchPlayer>("/match-players/", data),
   delete: (id: number) => api.delete(`/match-players/${id}/`),
 };
@@ -124,6 +146,8 @@ export const matchPlayersApi = {
 export const matchEventsApi = {
   create: (data: { match: number; match_player: number; event_type: string; minute?: number }) =>
     api.post<MatchEvent>("/match-events/", data),
+  update: (id: number, data: Partial<MatchEvent>) =>
+    api.patch<MatchEvent>(`/match-events/${id}/`, data),
   delete: (id: number) => api.delete(`/match-events/${id}/`),
 };
 
