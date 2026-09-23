@@ -1,47 +1,49 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Oswald:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Backgrounds */
-  --bg-void: #06080d;
-  --bg-surface: #0c1018;
-  --bg-card: #111723;
-  --bg-elevated: #1a2235;
-  --bg-hover: #1f2b42;
+  /* Backgrounds — broadcast black */
+  --bg-void: #0a0e14;
+  --bg-surface: #0f141d;
+  --bg-card: #141a26;
+  --bg-elevated: #1c2436;
+  --bg-hover: #232d44;
 
-  /* Text */
-  --text-primary: #e8ecf4;
-  --text-secondary: #7b8ba5;
-  --text-muted: #4a5568;
+  /* Text — chalk */
+  --text-primary: #f0f2f5;
+  --text-secondary: #8b97ab;
+  --text-muted: #6b7891;
 
-  /* Accents */
-  --accent: #3b82f6;
-  --accent-hover: #2563eb;
-  --accent-glow: rgba(59, 130, 246, 0.12);
-  --accent-glow-strong: rgba(59, 130, 246, 0.25);
+  /* Accent — grass green */
+  --accent: #22c55e;
+  --accent-hover: #4ade80;
+  --accent-fill: #15803d;
+  --accent-fill-hover: #166534;
+  --accent-glow: rgba(34, 197, 94, 0.12);
+  --accent-glow-strong: rgba(34, 197, 94, 0.25);
 
   /* Semantic */
-  --gold: #f59e0b;
-  --gold-soft: rgba(245, 158, 11, 0.1);
-  --green: #10b981;
-  --green-soft: rgba(16, 185, 129, 0.1);
+  --gold: #f5c518;
+  --gold-soft: rgba(245, 197, 24, 0.1);
+  --green: #22c55e;
+  --green-soft: rgba(34, 197, 94, 0.12);
   --red: #ef4444;
-  --red-soft: rgba(239, 68, 68, 0.1);
+  --red-soft: rgba(239, 68, 68, 0.12);
   --amber: #f59e0b;
   --amber-soft: rgba(245, 158, 11, 0.1);
   --purple: #8b5cf6;
   --purple-soft: rgba(139, 92, 246, 0.1);
 
   /* Borders */
-  --border: rgba(255, 255, 255, 0.05);
-  --border-strong: rgba(255, 255, 255, 0.1);
-  --border-focus: rgba(59, 130, 246, 0.5);
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --border-focus: rgba(34, 197, 94, 0.5);
 
-  /* Radius */
-  --radius-xs: 4px;
-  --radius-sm: 6px;
-  --radius: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
+  /* Radius — broadcast sharp */
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 10px;
 
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
@@ -63,8 +65,8 @@
   --space-16: 64px;
 
   /* Typography */
-  --font-display: 'Oswald', sans-serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: 'SF Mono', 'Fira Code', monospace;
 }
 
@@ -82,10 +84,9 @@ body {
   font-family: var(--font-body);
   background-color: var(--bg-void);
   color: var(--text-primary);
-  line-height: 1.5;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
 a {
@@ -110,7 +111,7 @@ a:hover {
 
 .header {
   background-color: var(--bg-surface);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px solid var(--accent);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -151,23 +152,26 @@ a:hover {
 
 .nav a {
   color: var(--text-muted);
-  font-size: 0.8125rem;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   text-decoration: none;
   padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm);
-  transition: all 0.15s ease;
-  letter-spacing: 0.01em;
+  border-radius: 0;
+  transition: color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .nav a:hover {
   color: var(--text-primary);
-  background-color: var(--bg-hover);
+  background-color: transparent;
 }
 
 .nav a.active {
-  color: var(--accent);
-  background-color: var(--accent-glow);
+  color: var(--text-primary);
+  background-color: transparent;
+  box-shadow: inset 0 -3px 0 var(--accent);
 }
 
 .header-right {
@@ -212,39 +216,49 @@ a:hover {
 
 .heading-hero {
   font-family: var(--font-display);
-  font-size: 3.5rem;
+  font-size: 4.5rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  line-height: 0.95;
+  color: var(--text-primary);
+}
+
+.heading-hero::after {
+  content: '';
+  display: block;
+  width: 140px;
+  height: 8px;
+  background: var(--accent);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+  margin-top: var(--space-4);
+}
+
+.heading-page {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
   line-height: 1;
   color: var(--text-primary);
 }
 
-.heading-page {
-  font-family: var(--font-display);
-  font-size: 2rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-  line-height: 1.1;
-  color: var(--text-primary);
-}
-
 .heading-section {
-  font-family: var(--font-body);
-  font-size: 0.8125rem;
+  font-family: var(--font-display);
+  font-size: 1rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   color: var(--text-muted);
 }
 
 .heading-card {
-  font-family: var(--font-body);
-  font-size: 0.9375rem;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
   font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: -0.01em;
+  letter-spacing: 0.01em;
 }
 
 .text-body {
@@ -296,15 +310,16 @@ a:hover {
 }
 
 .btn-primary {
-  background-color: var(--accent);
-  border-color: var(--accent);
+  background-color: var(--accent-fill);
+  border-color: var(--accent-fill);
   color: white;
 }
 
 .btn-primary:hover {
-  background-color: var(--accent-hover);
-  border-color: var(--accent-hover);
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  background-color: var(--accent-fill-hover);
+  border-color: var(--accent-fill-hover);
+  color: white;
+  box-shadow: 0 2px 8px rgba(21, 128, 61, 0.4);
 }
 
 .btn-ghost {
@@ -361,8 +376,11 @@ a:hover {
 }
 
 .card h3 {
-  font-size: 0.9375rem;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
   margin-bottom: var(--space-1);
 }
 
@@ -400,7 +418,7 @@ a:hover {
   font-size: 0.6875rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   line-height: 1.4;
 }
 
@@ -465,7 +483,7 @@ a:hover {
    ============================================ */
 
 .hero {
-  text-align: center;
+  text-align: left;
   padding: var(--space-12) 0 var(--space-8);
 }
 
@@ -475,9 +493,9 @@ a:hover {
 
 .hero-subtitle {
   color: var(--text-secondary);
-  font-size: 1rem;
-  max-width: 480px;
-  margin: 0 auto;
+  font-size: 1.0625rem;
+  max-width: 520px;
+  margin: var(--space-4) 0 0;
 }
 
 /* ============================================
@@ -492,16 +510,32 @@ a:hover {
 }
 
 .section-header h2 {
-  font-size: 0.8125rem;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.section-header h2::before {
+  content: '';
+  width: 16px;
+  height: 16px;
+  background: var(--accent);
+  clip-path: polygon(0 0, 100% 0, 65% 100%, 0 100%);
+  flex-shrink: 0;
 }
 
 .section-header a {
-  font-size: 0.75rem;
+  font-family: var(--font-display);
+  font-size: 0.875rem;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   color: var(--accent);
 }
 
@@ -512,13 +546,24 @@ a:hover {
 .home-hero-banner {
   background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-elevated) 100%);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius);
   padding: var(--space-8);
   margin-bottom: var(--space-8);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-8);
+}
+
+.home-hero-banner::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 32px;
+  height: 32px;
+  background: var(--bg-void);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
 }
 
 .home-hero-info {
@@ -528,14 +573,16 @@ a:hover {
 .home-hero-info .text-label {
   margin-bottom: var(--space-2);
   display: block;
+  color: var(--accent);
 }
 
 .home-hero-info h2 {
   font-family: var(--font-display);
-  font-size: 1.75rem;
+  font-size: 2.25rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
+  line-height: 1.05;
   margin-bottom: var(--space-2);
 }
 
@@ -557,10 +604,11 @@ a:hover {
 
 .home-hero-stat-value {
   font-family: var(--font-display);
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 2.5rem;
+  font-weight: 800;
   color: var(--accent);
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .home-hero-stat-label {
@@ -615,11 +663,12 @@ a:hover {
 
 .top-position {
   font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1rem;
+  font-weight: 800;
+  font-size: 1.125rem;
   color: var(--text-muted);
   min-width: 28px;
   text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .top-item:nth-child(1) .top-position { color: var(--gold); }
@@ -646,8 +695,10 @@ a:hover {
 }
 
 .top-name {
-  font-weight: 600;
-  font-size: 0.875rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -660,8 +711,8 @@ a:hover {
 
 .top-value {
   font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.125rem;
+  font-weight: 800;
+  font-size: 1.375rem;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
 }
@@ -693,9 +744,10 @@ a:hover {
 
 .standings-competition h2 {
   font-family: var(--font-display);
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .table-container {
@@ -717,12 +769,13 @@ a:hover {
 }
 
 .table th {
-  background-color: var(--bg-elevated);
-  color: var(--text-muted);
-  font-size: 0.6875rem;
+  background-color: rgba(34, 197, 94, 0.1);
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
 }
 
 .table tbody tr {
@@ -743,10 +796,11 @@ a:hover {
 .table tbody tr.zone-descenso { border-left-color: var(--red); }
 
 .col-pos {
-  width: 40px;
+  width: 48px;
   text-align: center;
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 800;
+  font-size: 1.125rem;
   color: var(--text-muted);
 }
 
@@ -757,6 +811,9 @@ a:hover {
 .col-club {
   min-width: 160px;
   font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 0.01em;
 }
 
 .col-num {
@@ -770,11 +827,17 @@ a:hover {
   text-align: center;
 }
 
+.table th:last-child,
+.table td:last-child {
+  background-color: rgba(34, 197, 94, 0.06);
+}
+
 .pts {
   font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.0625rem;
+  font-weight: 800;
+  font-size: 1.375rem;
   color: var(--accent);
+  font-variant-numeric: tabular-nums;
 }
 
 .zone-badge {
@@ -872,9 +935,12 @@ a:hover {
 }
 
 .match-team-name {
+  font-family: var(--font-display);
   font-weight: 700;
-  font-size: 0.8125rem;
-  line-height: 1.3;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
 }
 
 .match-home { text-align: right; }
@@ -887,11 +953,16 @@ a:hover {
 }
 
 .match-score .score {
+  display: inline-block;
   font-family: var(--font-display);
-  font-size: 1.75rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
+  background: var(--bg-void);
+  border: 1px solid var(--border-strong);
+  padding: var(--space-1) var(--space-3);
 }
 
 .match-score .vs {
@@ -945,10 +1016,23 @@ a:hover {
 
 .matchday-header h3 {
   font-family: var(--font-display);
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.125rem;
+  font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
   color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.matchday-header h3::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  clip-path: polygon(0 0, 100% 0, 65% 100%, 0 100%);
+  flex-shrink: 0;
 }
 
 .matchday-header span {
@@ -983,19 +1067,20 @@ a:hover {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--accent-fill);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  font-size: 1rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.125rem;
   color: white;
   flex-shrink: 0;
 }
 
 .player-avatar.pos-arq { background: var(--amber); }
-.player-avatar.pos-def { background: var(--accent); }
-.player-avatar.pos-med { background: var(--green); }
+.player-avatar.pos-def { background: var(--accent-fill); }
+.player-avatar.pos-med { background: #0f766e; }
 .player-avatar.pos-del { background: var(--red); }
 
 .player-avatar.large {
@@ -1010,8 +1095,10 @@ a:hover {
 }
 
 .player-nickname {
+  font-family: var(--font-display);
   font-weight: 700;
-  font-size: 0.9375rem;
+  font-size: 1.0625rem;
+  letter-spacing: 0.01em;
 }
 
 .player-meta {
@@ -1053,8 +1140,8 @@ a:hover {
   align-items: center;
   justify-content: center;
   font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.125rem;
+  font-weight: 800;
+  font-size: 1.25rem;
   color: var(--accent);
   flex-shrink: 0;
   overflow: hidden;
@@ -1075,8 +1162,10 @@ a:hover {
 }
 
 .club-name {
+  font-family: var(--font-display);
   font-weight: 700;
-  font-size: 0.9375rem;
+  font-size: 1.0625rem;
+  letter-spacing: 0.01em;
 }
 
 .club-info {
@@ -1112,8 +1201,8 @@ a:hover {
 .stat-value {
   display: block;
   font-family: var(--font-display);
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 2.25rem;
+  font-weight: 800;
   color: var(--text-primary);
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -1151,20 +1240,20 @@ a:hover {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--accent-fill);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 2rem;
+  font-weight: 800;
+  font-size: 2.25rem;
   color: white;
   flex-shrink: 0;
 }
 
 .profile-avatar.pos-arq { background: var(--amber); }
-.profile-avatar.pos-def { background: var(--accent); }
-.profile-avatar.pos-med { background: var(--green); }
+.profile-avatar.pos-def { background: var(--accent-fill); }
+.profile-avatar.pos-med { background: #0f766e; }
 .profile-avatar.pos-del { background: var(--red); }
 
 .profile-info {
@@ -1173,10 +1262,11 @@ a:hover {
 
 .profile-info h1 {
   font-family: var(--font-display);
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 2.75rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
+  line-height: 1;
   margin-bottom: var(--space-2);
 }
 
@@ -1192,14 +1282,27 @@ a:hover {
 }
 
 .profile-section h2 {
-  font-size: 0.8125rem;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
   margin-bottom: var(--space-4);
   padding-bottom: var(--space-3);
   border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.profile-section h2::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  clip-path: polygon(0 0, 100% 0, 65% 100%, 0 100%);
+  flex-shrink: 0;
 }
 
 /* ============================================
@@ -1503,8 +1606,8 @@ a:hover {
 }
 
 .pagination-active {
-  background-color: var(--accent) !important;
-  border-color: var(--accent) !important;
+  background-color: var(--accent-fill) !important;
+  border-color: var(--accent-fill) !important;
   color: white !important;
 }
 
@@ -1556,10 +1659,11 @@ a:hover {
 
 .page-header h1 {
   font-family: var(--font-display);
-  font-size: 2rem;
-  font-weight: 600;
+  font-size: 2.5rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
+  line-height: 1;
 }
 
 /* ============================================
@@ -1576,7 +1680,8 @@ a:hover {
 .login-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-top: 3px solid var(--accent);
+  border-radius: var(--radius);
   padding: var(--space-8);
   width: 100%;
   max-width: 400px;
@@ -1596,19 +1701,20 @@ a:hover {
 
 .login-logo h1 {
   font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.75rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
 }
 
 .login-card h2 {
   text-align: center;
   margin-bottom: var(--space-6);
   font-family: var(--font-display);
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 /* ============================================
@@ -2027,11 +2133,17 @@ a:hover {
   }
 
   .heading-hero {
-    font-size: 2.25rem;
+    font-size: 3rem;
   }
 
-  .heading-page {
-    font-size: 1.5rem;
+  .heading-hero::after {
+    width: 100px;
+    height: 6px;
+  }
+
+  .heading-page,
+  .page-header h1 {
+    font-size: 2rem;
   }
 
   .card-grid {
@@ -2109,7 +2221,7 @@ a:hover {
   }
 
   .profile-info h1 {
-    font-size: 1.5rem;
+    font-size: 2rem;
   }
 
   .login-card {
@@ -2119,6 +2231,10 @@ a:hover {
 }
 
 @media (max-width: 480px) {
+  .heading-hero {
+    font-size: 2.5rem;
+  }
+
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -2162,6 +2278,6 @@ a:hover {
 }
 
 ::selection {
-  background-color: rgba(59, 130, 246, 0.3);
+  background-color: rgba(34, 197, 94, 0.3);
   color: var(--text-primary);
 }

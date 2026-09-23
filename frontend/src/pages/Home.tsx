@@ -77,7 +77,7 @@ export default function Home() {
       {featuredSeason && (
         <Link
           to={`/standings/${featuredSeason.id}`}
-          className="home-hero-banner card-accent-gold"
+          className="home-hero-banner card-accent"
           style={{ textDecoration: "none", color: "inherit", display: "flex" }}
         >
           <div className="home-hero-info">
@@ -105,7 +105,7 @@ export default function Home() {
             </div>
             <div className="home-hero-stat">
               <div className="home-hero-stat-value">
-                {standings.reduce((acc, s) => acc + s.played, 0) / 2}
+                {Math.round(standings.reduce((acc, s) => acc + s.played, 0) / 2)}
               </div>
               <div className="home-hero-stat-label">Partidos</div>
             </div>
