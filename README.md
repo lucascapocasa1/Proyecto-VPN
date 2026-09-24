@@ -26,9 +26,9 @@ ea-fc-platform/
 │   │   ├── accounts/              # Users, roles, permisos, JWT auth
 │   │   ├── competitions/          # Countries, Games, Leagues, Seasons, Divisions
 │   │   ├── clubs/                 # Clubs, ClubSeason, ClubTitle
-│   │   ├── players/               # Players, historial de identidad y clubes
+│   │   ├── players/               # Players, historial de identidad y clubes, Transfer
 │   │   ├── matches/               # Matchdays, Matches, MatchPlayers, MatchEvents
-│   │   ├── standings/             # Standing (derivado), services, zones
+│   │   ├── standings/             # Standing (derivado), services, zones, seed/fix commands
 │   │   └── statistics/            # Estadísticas derivadas de MatchEvents
 │   ├── test_helpers/              # Base de tests reutilizable
 │   ├── manage.py
@@ -48,10 +48,11 @@ ea-fc-platform/
 │   │   │       ├── Pagination.tsx
 │   │   │       └── SearchBar.tsx
 │   │   ├── context/               # AuthContext (JWT)
-│   │   ├── pages/                 # Todas las páginas
+│   │   ├── hooks/                 # useCanEdit (SUPERADMIN/ADMIN_LIGA)
+│   │   ├── pages/                 # Todas las páginas (14)
 │   │   ├── types/                 # TypeScript interfaces
 │   │   ├── App.tsx
-│   │   └── App.css                # Dark theme sports UI
+│   │   └── App.css                # Matchday Broadcast theme
 │   ├── vite.config.ts
 │   └── package.json
 ├── .gitignore
@@ -92,31 +93,31 @@ ea-fc-platform/
 - **TypeScript types** para todos los modelos
 - **AuthContext** con login/logout/profile
 - **Layout** con Header, navegación, Footer
-- **UI Components**: StandingsTable (colores de zona), MatchCard, PlayerCard, ClubCard, Loading, ErrorMessage
-- **12 páginas**: Home, Countries, Leagues, Seasons, Standings, Clubs, ClubProfile, Players, PlayerProfile, Matches, Statistics, Login
-- **Dark theme** con estilos deportivos, spinner animado, forms inline, filters
+- **UI Components**: StandingsTable (colores de zona), MatchCard (link al detalle), PlayerCard, ClubCard, Loading, ErrorMessage
+- **14 páginas**: Home, Countries, Leagues, Seasons, Standings, Clubs, ClubProfile, Players, PlayerProfile, Matches, MatchDetail, Transfers, Statistics, Login
+- **Tema Matchday Broadcast**: Barlow Condensed + IBM Plex Sans, accent verde césped `#22c55e`
 - **Build** pasa sin errores
 
 ### Fase 5 — Autenticación y Permisos
 
 - **7 clases de permisos**: IsSuperAdmin, IsAdminLiga, IsAdminClub, IsAdminOrPlayer, IsOwnerOrAdmin, CanManageLeague, CanManageClub
 - **Permisos por ViewSet**: lectura pública, escritura según rol
-- **Nickname change**: solo SUPERADMIN puede cambiar nicknames
+- **Nickname change**: SUPERADMIN y ADMIN_LIGA pueden cambiar nicknames (IsAdminLiga)
 - **Token refresh automático** en el frontend
 
 ### Fase 6 — Tests
 
-- **74 tests**, todos pasando
+- **106 tests**, todos pasando
 - **6 archivos de tests**:
-  - `apps/players/tests.py` (9 tests): creación, nickname único, historial
-  - `apps/clubs/tests.py` (8 tests): clubs, club-season, títulos
-  - `apps/matches/tests.py` (10 tests): partidos, alineaciones, BOT, eventos
-  - `apps/standings/tests.py` (10 tests): recálculo de posiciones, zonas
-  - `apps/statistics/tests.py` (8 tests): estadísticas derivadas, rankings
+  - `apps/players/tests.py` (20 tests): creación, nicknames, historial, mercado de pases
+  - `apps/clubs/tests.py` (11 tests): clubs, club-season, títulos (CRUD API)
+  - `apps/matches/tests.py` (18 tests): partidos, alineaciones, BOT, eventos, permisos, auto-recalc
+  - `apps/standings/tests.py` (16 tests): recálculo de posiciones, zonas por división
+  - `apps/statistics/tests.py` (12 tests): estadísticas derivadas, rankings
   - `apps/accounts/tests.py` (29 tests): auth, permisos por rol en todos los endpoints
 
 ```bash
-python manage.py test apps.accounts.tests apps.players.tests apps.clubs.tests apps.matches.tests apps.standings.tests apps.statistics.tests -v 2
+python manage.py test
 ```
 
 ### Fase 7 — Frontend-Backend Integration
@@ -127,9 +128,9 @@ python manage.py test apps.accounts.tests apps.players.tests apps.clubs.tests ap
 - **Páginas conectadas con API real**:
   - **Home**: carga seasons, clubs, top scorers desde API
   - **Standings**: tabla de posiciones + botón "Recalcular Tabla" (solo ADMIN_LIGA+)
-  - **Clubs**: lista + formulario crear club (solo SUPERADMIN)
+  - **Clubs**: lista + formulario crear club (SUPERADMIN/ADMIN_LIGA)
   - **ClubProfile**: detalle con títulos y participaciones
-  - **Players**: lista + formulario crear jugador (solo SUPERADMIN)
+  - **Players**: lista + formulario crear jugador (SUPERADMIN/ADMIN_LIGA)
   - **PlayerProfile**: detalle con stats, historial de clubes y nicknames
   - **Matches**: lista con filtro por estado (SCHEDULED/IN_PROGRESS/FINISHED)
   - **Statistics**: tabs Goleadores/Asistencias/MVP
@@ -187,6 +188,35 @@ python manage.py test apps.accounts.tests apps.players.tests apps.clubs.tests ap
 - **USER_GUIDE.md**: guía de uso para usuarios de la plataforma
 - **DEVELOPER_GUIDE.md**: guía de desarrollo para programadores
 
+### Fase 11 — Datos y zonas (S2 activa)
+
+- **Zonas por división** corregidas: Primera (p1 CAMPEÓN, p19 PROMOCIÓN, p20 DESCENSO), Segunda↓ (+ REDUCIDO p2-9)
+- **Títulos S1 corregidos** (Rosario United AR, Peñarol UY)
+- **Transiciones S1→S2**: descenso directo p20, ascenso del campeón de Segunda; Promoción manual
+- **S2 ACTIVE**: 11 matchdays por división (J1-J10 FINISHED, J11 SCHEDULED), fixtures regenerados
+- **Comandos idempotentes**: `fix_season_transitions`, `seed_s2`
+
+### Fase 12 — Mercado de pases (v1)
+
+- **Modelo `Transfer`**: player, from_club_season, to_club_season, date, registered_by (migración `0003_transfer`)
+- **API `/api/transfers/`**: CRUD, escritura ADMIN_LIGA, DELETE revierte la última transferencia
+- **160 transferencias backfilleadas** desde los movimientos S1→S2
+- **Página `/transfers`**: alta/baja, búsqueda de jugadores, filtro por temporada
+
+### Fase 13 — Edición admin inline
+
+- **`MatchDetail` (`/matches/:id`)**: scoreboard, editar resultado/estado/fecha/hora, alineaciones (agregar/quitar), CRUD de eventos — con **recálculo automático de posiciones** en el backend (`_refresh_derived`)
+- **Edición inline en página**: ClubProfile (club + títulos CRUD), PlayerProfile (nickname/posición/plataforma/país), Seasons (estado/nombre)
+- **Hook `useCanEdit`**: unifica la visibilidad de controles de edición (SUPERADMIN/ADMIN_LIGA)
+- **Fixes**: links a clubes usaban id de club_season (ahora id de club), ruta `/standings` sin temporada, `ClubTitleViewSet` sin serializer, PATCH parcial de partidos, loop infinito por ordering de `MatchPlayer`
+
+### Fase 14 — Rate limits (429)
+
+- **Sin throttles globales**: se eliminaron `AnonRateThrottle`/`UserRateThrottle` por defecto (rompían la navegación con 429)
+- **Scope `auth` 10/min por IP**: solo en `login`, `register` y `token/refresh` (anti fuerza bruta)
+- **Retry en frontend**: el axios client reintenta 1 vez las respuestas 429 esperando `Retry-After`
+- Verificado: 150 GETs anónimos → 150×200; 12 logins → 10×200 + 2×429
+
 ---
 
 ## Modelo de datos
@@ -215,6 +245,7 @@ Country → League → Season → Division → ClubSeason → Match → MatchPla
 | `Player` | Jugador (identidad interna estable, con position ARQ/DEF/MED/DEL) |
 | `PlayerIdentityHistory` | Historial de nicknames |
 | `PlayerClubHistory` | Historial de clubes del jugador |
+| `Transfer` | Movimiento de mercado entre clubes (registro manual del admin) |
 | `Matchday` | Jornada dentro de una temporada/división |
 | `Match` | Partido entre dos clubes |
 | `MatchPlayer` | Jugador que participó en un partido |
@@ -249,8 +280,9 @@ Country → League → Season → Division → ClubSeason → Match → MatchPla
 | Countries, Games, Formats | Público | SUPERADMIN |
 | Leagues, Seasons, Divisions | Público | ADMIN_LIGA |
 | Clubs | Público | CanManageClub |
-| Players | Público | Solo nickname: SUPERADMIN |
-| Matches, Events | Público | ADMIN_LIGA |
+| ClubSeason, ClubTitle | Público | ADMIN_LIGA |
+| Players, IdentityHistory, ClubHistory, Transfers | Público | ADMIN_LIGA |
+| Matches, MatchPlayers, MatchEvents | Público | ADMIN_LIGA |
 | Standings | Público | Recalculate: ADMIN_LIGA |
 | Statistics | Público | — |
 
@@ -275,10 +307,10 @@ GET /api/schema/              # OpenAPI schema (JSON/YAML)
 ### Autenticación
 
 ```bash
-POST /api/auth/login/          # Login → {access, refresh}
-POST /api/auth/register/       # Registro
+POST /api/auth/login/          # Login → {access, refresh}   (throttle 10/min)
+POST /api/auth/register/       # Registro                    (throttle 10/min)
 GET  /api/auth/profile/        # Perfil del usuario autenticado
-POST /api/token/refresh/       # Refresh token
+POST /api/token/refresh/       # Refresh token               (throttle 10/min)
 ```
 
 ### Endpoints públicos
@@ -307,6 +339,10 @@ GET/POST/PUT/PATCH/DELETE /api/clubs/
 GET/POST/PUT/PATCH/DELETE /api/players/
 GET/POST/PUT/PATCH/DELETE /api/matches/
 GET/POST/PUT/PATCH/DELETE /api/match-events/
+GET/POST/PUT/PATCH/DELETE /api/match-players/
+GET/POST/PUT/PATCH/DELETE /api/club-titles/
+GET/POST/PUT/PATCH/DELETE /api/transfers/
+PATCH /api/seasons/{id}/            # actualizar temporada (estado, nombre)
 POST /api/standings/recalculate/   {"season_id": 1, "division_id": 1}
 ```
 
@@ -318,8 +354,10 @@ POST /api/standings/recalculate/   {"season_id": 1, "division_id": 1}
 python manage.py recalculate_standings --season 1 --division 1
 python manage.py recalculate_standings --all
 python manage.py generate_fixtures --season 1 --division 1
-python manage.py seed_data        # Dataset completo (~34K registros, 2 países)
+python manage.py seed_data        # Dataset completo (~34K registros, 2 países, S2 ACTIVE)
 python manage.py seed_dev         # Dataset chico (~1.2K registros, 1 país)
+python manage.py seed_s2          # Upgrade idempotente de un seed viejo a S2 ACTIVE
+python manage.py fix_season_transitions  # Zonas, títulos S1, transiciones S1→S2, regenera S2
 python manage.py flush            # Limpiar base de datos
 ```
 
@@ -337,7 +375,7 @@ python manage.py createsuperuser
 python manage.py runserver
 
 # Tests
-python manage.py test apps.accounts.tests apps.players.tests apps.clubs.tests apps.matches.tests apps.standings.tests apps.statistics.tests -v 2
+python manage.py test
 
 # Frontend
 cd frontend
@@ -388,6 +426,9 @@ npm run dev
 8. **Platform es opcional**: No divide ligas ni tablas (EA FC tiene crossplay)
 9. **CompetitionFormat**: Configurable por Season (round robin, doble, personalizado)
 10. **Zonas de tabla**: Configurables por Division (campeón, reducido, promoción, descenso)
+11. **Edición inline por página**: no hay panel admin central; cada página (partido, club, jugador, temporada) expone sus controles de edición según `useCanEdit`
+12. **Recálculo automático de posiciones**: toda mutación de Match/MatchPlayer/MatchEvent dispara `_refresh_derived` → `recalculate_standings` + `cache.clear()`
+13. **Rate limit solo en auth**: sin throttles globales; `login/register/refresh` limitados a 10/min por IP; el frontend reintenta 429 una vez
 
 ---
 
@@ -395,6 +436,7 @@ npm run dev
 
 Ver `PROXIMOS_CAMBIOS.md` para el plan detallado:
 
-- **Mercado de pases** — Free agents, invitaciones a clubes, ventana de pases controlada por admin
-- **Carga de estadísticas** — Formulario para cargar goles, asistencias, tarjetas y MVP por partido
+- **Estadísticas detalladas por partido** — **Plan aprobado** (PROXIMOS_CAMBIOS.md #4): modelo `MatchPerformance` (18 campos por jugador por partido), OCR con `pytesseract` + Pillow (port del parser de FIFASTATS) y verificación humana antes de guardar, con migración del backend a Docker en Render Free. Fases: 1) modelo/API/historial → 2) OCR + Docker → 3) analítica/gráficos
+- **Mercado de pases v2** — Free agents, invitaciones a clubes, ventana de pases controlada por admin (v1 de registro manual ya implementada)
+- **Reducido/Promoción** — Generar las llaves del Reducido y la Promoción como partidos
 - **Brasil** — Tercer país con la misma estructura de ligas

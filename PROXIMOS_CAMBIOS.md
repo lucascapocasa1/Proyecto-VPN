@@ -23,7 +23,7 @@ Liga
 ├── Temporada 1 (FINISHED)
 │   ├── Primera Division (20 equipos)
 │   └── Segunda Division (20 equipos)
-└── Temporada 2 (UPCOMING, sin partidos)
+└── Temporada 2 (ACTIVE, con fixtures)
     ├── Primera Division (20 equipos, armada por admin)
     └── Segunda Division (20 equipos)
 ```
@@ -32,8 +32,8 @@ Liga
 
 | Division | Pos 1 | Pos 2-9 | Pos 19 | Pos 20 |
 |----------|-------|---------|--------|--------|
-| Primera | CAMPEON | - | PROMOCION | DESCENSO |
-| Segunda | CAMPEON (asciende directo) | REDUCIDO | - | - |
+| Primera | CAMPEON | NORMAL | PROMOCION | DESCENSO |
+| Segunda | CAMPEON (asciende directo) | REDUCIDO | PROMOCION | DESCENSO |
 
 ### Formato de partidos
 
@@ -55,7 +55,7 @@ Liga
 - Nicknames realistas (ej: lucas_gar10, diego_pro)
 - Estadisticas realistas por posicion (goles pesados: DEL=10x, MED=5x, DEF=2x, ARQ=0.5x)
 
-### Volumen final (2 paises, S1 FINISHED + S2 UPCOMING)
+### Volumen final (2 paises, S1 FINISHED + S2 ACTIVE)
 
 | Entidad | Argentina | Uruguay | Total |
 |---------|-----------|---------|-------|
@@ -74,6 +74,8 @@ Liga
 | Standings | 40 | 40 | 80 |
 | **Total** | | | **~34,354** |
 
+Nota: desde la Fase 11, S2 esta ACTIVE con fixtures: +22 matchdays (11 por division) y +220 matches por pais (J1-J10 FINISHED, J11 SCHEDULED), mas ~160 Transfer backfilleados.
+
 ### Archivos creados/modificados
 
 - `apps/players/models.py` — Campo `position` agregado (ARQ/DEF/MED/DEL)
@@ -86,7 +88,9 @@ Liga
 
 ### Estado
 
-✅ Implementado y verificado (74 tests pasando, Playwright testing OK)
+✅ Implementado y verificado (106 tests pasando, E2E Playwright OK)
+
+**S2 ahora está ACTIVE** (no UPCOMING): 11 matchdays por división (J1-J10 FINISHED, J11 SCHEDULED), con transiciones S1→S2 aplicadas y fixtures regenerados. Comandos idempotentes: `seed_data`, `seed_s2`, `fix_season_transitions`.
 
 ---
 
@@ -96,48 +100,29 @@ Liga
 
 Sistema de transferencias donde jugadores sin club aparecen automaticamente en el mercado. Los admin de club pueden enviar invitaciones. El admin general controla el periodo de fichajes.
 
-### Modelos
+### ✅ v1 — Implementado (registro manual del admin)
 
-#### ~~Modificar Player — agregar posicion~~ (YA IMPLEMENTADO)
+Lo que ya esta en producción:
 
-```python
-# Ya existe en apps/players/models.py
-position = models.CharField(
-    max_length=3,
-    choices=[
-        ("ARQ", "Arquero"),
-        ("DEF", "Defensor"),
-        ("MED", "Mediocampista"),
-        ("DEL", "Delantero"),
-    ],
-    null=True, blank=True,
-)
-# Migracion: 0002_player_position
-# Serializers: PlayerSerializer y PlayerDetailSerializer incluyen position
-# Frontend: Player interface incluye position, PlayerCard muestra badge
-```
+- **Modelo `Transfer`** (`apps/players/models.py`): player, from_club_season, to_club_season, date, registered_by, created_at — migracion `players/0003_transfer`
+- **API `/api/transfers/`**: CRUD (lectura publica, escritura ADMIN_LIGA+). `DELETE` revierte solo la ultima transferencia del jugador
+- **160 transferencias backfilleadas** desde los movimientos directos S1→S2
+- **Pagina `/transfers` (Mercado)**: alta/baja de transferencias, busqueda de jugadores, filtro por temporada, links a clubes origen/destino
+- **Tests**: 10 transfer API tests (`TransferApiTest`)
 
-#### Nuevo modelo Transfer
+### Pendiente (v2) — logica de mercado
+
+#### Modelo Transfer (version propuesta original, aun no implementada)
 
 ```python
-class Transfer(models.Model):
-    class Status(models.TextChoices):
-        PENDING = "PENDING", "Pendiente"
-        ACCEPTED = "ACCEPTED", "Aceptada"
-        REJECTED = "REJECTED", "Rechazada"
-        EXPIRED = "EXPIRED", "Expirada"
-        CANCELLED = "CANCELLED", "Cancelada"
+class Status(models.TextChoices):
+    PENDING / ACCEPTED / REJECTED / EXPIRED / CANCELLED
 
-    player = ForeignKey(Player, related_name="transfers")
-    offering_club = ForeignKey(ClubSeason, related_name="transfer_offers")
-    season = ForeignKey(Season, related_name="transfers")
-    message = TextField(blank=True)
-    status = CharField(default=Status.PENDING)
-    expires_at = DateTimeField()  # created_at + 24h
-    created_at = DateTimeField(auto_now_add=True)
-    responded_at = DateTimeField(null=True, blank=True)
-
-    unique_together = ["player", "offering_club", "season"]
+offering_club = ForeignKey(ClubSeason)
+season = ForeignKey(Season)
+message = TextField(blank=True)
+expires_at = DateTimeField()  # created_at + 24h
+unique_together = ["player", "offering_club", "season"]
 ```
 
 #### Modificar Season — ventana de pases
@@ -146,51 +131,28 @@ class Transfer(models.Model):
 transfer_window_open = BooleanField(default=False)
 ```
 
-### Logica de negocio
+### Logica de negocio (v2)
 
 - **Free agent**: jugador sin PlayerClubHistory con left_at=None en la temporada activa
 - **Aceptacion**: al aceptar, se cancelan las demas invitaciones PENDING del jugador en esa temporada y se crea PlayerClubHistory
 - **Expiracion**: invitaciones expiran a las 24h, vuelven al mercado
 - **Multiples ofertas**: un jugador puede tener varias ofertas pendientes a la vez
 
-### Endpoints
+### Endpoints (v2)
 
 | Metodo | Endpoint | Descripcion | Permisos |
 |--------|----------|-------------|----------|
 | GET | `/api/transfer-market/` | Listar free agents con stats | Publico |
 | POST | `/api/transfers/` | Enviar invitacion | ADMIN_CLUB |
-| GET | `/api/transfers/` | Ver mis invitaciones | Autenticado |
 | PUT | `/api/transfers/{id}/accept/` | Aceptar invitacion | PLAYER |
 | PUT | `/api/transfers/{id}/reject/` | Rechazar invitacion | PLAYER |
 | POST | `/api/seasons/{id}/open-transfer-window/` | Abrir ventana | ADMIN_LIGA |
 | POST | `/api/seasons/{id}/close-transfer-window/` | Cerrar ventana | ADMIN_LIGA |
 
-### Frontend — Pagina /transfer-market
-
-- Filtros: posicion (ARQ/DEF/MED/DEL), busqueda por nickname
-- Ordenamiento: goles, asistencias, MVP, amarillas, rojas
-- Cards con stats resumidas
-- Boton "Invitar" (solo ADMIN_CLUB + ventana abierta)
-- Modal de invitacion (mensaje opcional)
-
-### Archivos a crear/modificar
-
-- **Nueva app**: `apps/transfers/` (models, serializers, views, urls, admin)
-- `apps/players/models.py` — campo position
-- `apps/players/serializers.py` — incluir position
-- `apps/competitions/models.py` — transfer_window_open en Season
-- `apps/competitions/serializers.py` — incluir campo
-- `apps/competitions/views.py` — acciones open/close transfer window
-- `apps/statistics/services.py` — funcion get_market_players()
-- `config/urls.py` — incluir URLs de transfers
-- `config/settings/base.py` — agregar apps.transfers
-- `frontend/src/pages/TransferMarket.tsx` — nueva pagina
-- `frontend/src/api/index.ts` — endpoints del mercado
-- `frontend/src/App.tsx` — ruta /transfer-market
-
 ### Estado
 
-Aprobado — implementar despues de la base de datos grande
+✅ v1 implementado (registro manual + pagina Mercado)
+📋 v2 aprobado — free agents, invitaciones, ventana de pases: implementar despues de Brasil
 
 ---
 
@@ -206,65 +168,79 @@ Pendiente — agregar cuando la base de datos de 2 paises funcione bien
 
 ---
 
-## 4. Carga de estadisticas de partidos
+## 4. Estadisticas detalladas por partido (rendimiento) — PLAN APROBADO
 
 ### Descripcion
 
-Sistema para cargar las estadisticas de cada partido (goles, asistencias, tarjetas, MVP). Hay dos opciones posibles.
+Sistema para recolectar el rendimiento detallado de **cada jugador en cada partido** (18 campos numericos), inspirado en FIFASTATS (https://github.com/lucascapocasa1/FIFASTATS---Al-Yateh): el admin de division sube una captura por jugador de la pestaña "Rendimiento" de EA FC, el sistema extrae los datos por OCR, el admin verifica/corrige antes de guardar, y despues se muestran por jugador (historial partido a partido) y se agregan en tablas y graficos.
 
-### Opcion A — Carga manual (seleccionada por ahora)
+Esto es **ademas** de la Opcion A actual (resultados/alineaciones/eventos), que no cambia.
 
-**Flujo:**
-1. El capitan del equipo graba el video de la pestaña "Rendimiento" del partido
-2. Sube el video a YouTube y comparte el link
-3. El admin de la division carga manualmente: goles, asistencias, tarjetas y MVP
+### Decisiones aprobadas
 
-**Ventajas:**
-- Sin dependencias tecnologicas额外
-- Flujo conocido y confiable
-- Menos puntos de fallo
-- Datos suficientes para standings y rankings
+| Tema | Decision |
+|------|----------|
+| Modelo | Nuevo `MatchPerformance` (OneToOne a `MatchPlayer`), no toca Match/MatchPlayer/MatchEvent existentes |
+| Campos | 18 numericos de FIFASTATS: rating, goles, asistencias, tiros, precision tiros, pases, precision pases, regates, exito regates, entradas, exito entradas, offsides, faltas, posesion ganada, posesion perdida, minutos, distancia km, sprint km (sin mvp_ig/part_ig; posicion vive en Player) |
+| OCR | `pytesseract` + `Pillow` en el backend Django, port de `parser.js`/`ocr.js`/`imageProcessor.js` de FIFASTATS |
+| Deploy | **Migracion del backend a Docker en Render Free** (Dockerfile con `tesseract-ocr` + `tesseract-ocr-spa`; sigue siendo Render gratis, mismo deploy por push) |
+| Imagenes | Se procesan y se **descartan** tras verificar (no se persisten; el disco de Render es efimero) |
+| Permisos | Escritura solo ADMIN_LIGA (mismo patron que MatchEventViewSet: `IsAdminLiga` / lectura `AllowAny`) |
+| Identidad OCR | El nombre detectado se fuzzy-matcea (Levenshtein) contra el plantel real de los dos clubes del partido (nickname + PlayerIdentityHistory); el admin confirma/corrige en la UI |
+| Competencia | `MatchEvent` + resultado siguen siendo autoridad para standings y rankings actuales; `MatchPerformance` es solo analitica (si los goles de la captura difieren, se guardan ambos) |
+| Volumen | ~11 filas x 18 campos por partido cargado; S1 completa (~760 partidos) = ~8.400 filas, unos pocos MB en Postgres (no es problema de escala; lo pesado serian las capturas, que se descartan) |
 
-**Desventajas:**
-- Menos datos (solo lo esencial)
-- Dependiente del admin
+### Fase 1 — Modelo, API e historial (sin OCR, sin tocar deploy)
 
-### Opcion B — Carga via OCR (futuro)
+- `apps/matches/models.py`: `MatchPerformance` — `match_player = OneToOne(MatchPlayer)` + 18 campos (`rating Decimal(3,1)` 0-10; porcentajes enteros 0-100; km `Decimal(4,1)`; conteos enteros) + `clean()` que exige `match_player.player` distinto de `None` (BOT no tiene rendimiento). Migracion nueva.
+- `MatchPerformanceViewSet`: `filterset_fields=["match","match_player"]`, lectura publica, escritura `IsAdminLiga`, `perform_* -> cache.clear()`.
+- `POST /api/matches/{id}/performances/batch/`: upsert por jugador; si no existe `MatchPlayer`, lo crea (`is_starter=True`, `display_name=nickname`) validando via `PlayerClubHistory` que el jugador tenga stint en el club_season local o visitante; jugador ajeno al partido -> 400.
+- `GET /api/players/{id}/performances/`: historial con contexto de partido (fecha, rival, resultado + los 18 campos), filtros opcionales season/division.
+- Frontend: seccion "Rendimiento detallado" en MatchDetail (tabla con los 18 inputs + Guardar todo) y seccion "Partidos y rendimiento" en PlayerProfile (lista de participaciones, expand para detalle; fallback "sin datos" para partidos legacy).
+- Tests: validaciones de modelo, batch (upsert/auto-create/jugador ajeno), permisos, historial.
 
-**Flujo:**
-1. El capitan sube un screenshot de la pantalla "Rendimiento"
-2. El sistema parsea la imagen con OCR y extrae todas las estadisticas
-3. El admin verifica y corrige si es necesario
-4. Se guardan los datos
+### Fase 2 — OCR (pytesseract + Docker)
 
-**Tecnologias existentes:**
-- Proyecto: FIFASTATS (https://github.com/lucascapocasa1/FIFASTATS---Al-Yateh)
-- Backend: Node.js, Express, PostgreSQL
-- OCR: Tesseract.js + Sharp (image processing)
-- Frontend: Chart.js (dashboards, radar charts, comparaciones)
+- `requirements.txt`: + `pytesseract` (Pillow ya esta).
+- **Dockerfile** en la raiz (`python:3.12-slim` + `apt-get install tesseract-ocr tesseract-ocr-spa` + pip + collectstatic) y **`render.yaml` migrado a Docker** (preservando migrate, envVars y la DB `ea-fc-db`; plan Free igual, $0). Local: instalar Tesseract + spa (winget UB-Mannheim.TesseractOCR) y documentarlo.
+- `apps/matches/services/ocr.py`:
+  - `preprocess()` con Pillow replicando los ratios de `imageProcessor.js` (panel stats: x>=0.62, y>=0.10; panel nombre: x 0.02-0.44, y 0.08-0.30; x3, greyscale, linear(1.5,-30), threshold, sharpen)
+  - `ocr()` con lang `spa` + config/whitelist de `ocr.js`
+  - Port de `parser.js`: keywords -> campo (siempre el primer numero de la linea), fix rating 6<->9 (espejo), O->0, coma->punto, Levenshtein contra el plantel del partido
+  - Concurrencia 2 (como el worker pool de FIFASTATS)
+- `POST /api/matches/{id}/performances/analyze/`: multipart, hasta 30 archivos, devuelve `[{index, detected_name, suggested_player_id, stats, warnings}]`, **no persiste imagenes**.
+- Frontend: `PerformanceUploadModal` en MatchDetail — dropzone multi-captura (objectURL local), fichas de revision (preview, jugador sugerido en select del plantel, 18 inputs prellenados, warnings resaltados) -> "Guardar todo" -> batch.
+- Tests: parser con textos OCR fijos, preprocessing con imagen Pillow generada, endpoint con `pytesseract` mockeado (sin binario en CI), permisos.
+- Al arrancar la fase: re-fetchear `parser.js`, `ocr.js`, `imageProcessor.js`, `routes.js` del repo FIFASTATS para portar al detalle exacto.
 
-**Integracion con Django:**
-- Opcion 1: Servicio Node.js separado (puerto diferente)
-- Opcion 2: Reescribir OCR en Python con pytesseract + Pillow
-- Opcion 3: Microservicio Docker con el proyecto FIFASTATS
+### Fase 3 — Analitica (cuando haya datos reales)
 
-**Ventajas:**
-- Mas datos (goles, asistencias, pases, rating, km, etc.)
-- Menos carga manual
-- Dashboards y graficos comparativos
+- `statistics/services.py`: leaderboards por metrica (`AVG`/`SUM` de rating, km, precision de pases, etc.) con los mismos filtros season/division/league/country/game; evolucion por jugador (serie ordenada por fecha); cache 600s (los `cache.clear()` ya estan cubiertos por las mutaciones de la Fase 1).
+- Endpoints nuevos en `statistics/views.py`.
+- Frontend: graficos (lib a elegir en el momento, ej. recharts), upgrade de Statistics.tsx, sparklines en PlayerProfile.
 
-**Desventajas:**
-- Complejidad de integracion
-- Errores de OCR que requieren verificacion
-- Mas dependencias
+### Garantias
+
+- **Competicion intacta**: standings/rankings actuales salen de MatchEvent + resultado; una migracion nueva y cero cambios en modelos viejos (los 106 tests siguen pasando).
+- Partidos seed/legacy sin capturas -> sin fila de performance (fallback en UI, jamas rellenar con ceros).
+- BOT (`MatchPlayer.player=NULL`) no puede tener performance (validado en el modelo).
+
+### Referencia FIFASTATS (para el port)
+
+- Repo: https://github.com/lucascapocasa1/FIFASTATS---Al-Yateh
+- `backend/db-pg.js` — esquema `stats` (~21 campos por jugador por partido)
+- `backend/imageProcessor.js` — recortes y preproceso (Sharp)
+- `backend/ocr.js` — Tesseract.js, pool de 2 workers, lang spa, whitelist
+- `backend/parser.js` — keywords, first-number, fix 6/9, Levenshtein vs CANONICAL_NAMES
+- `backend/routes.js` — upload -> analyze -> verificacion humana -> save
 
 ### Estado
 
-Opcion A seleccionada. Opcion B pendiente para futuro.
+📋 **Plan aprobado** (decisiones cerradas: modelo, campos, OCR pytesseract+Docker en Render Free, imagenes descartadas, solo ADMIN_LIGA). Orden de implementacion: **Fase 1 -> Fase 2 -> Fase 3**. Pendiente de arranque.
 
-### Archivos a crear/modificar (Opcion A)
+### Archivos ya existentes que se usan (Opcion A — sin cambios)
 
-- `apps/matches/views.py` — Endpoint para cargar stats de un partido
-- `apps/matches/serializers.py` — Serializer para carga de stats
-- `frontend/src/pages/MatchDetail.tsx` — Formulario de carga de stats
-- `apps/statistics/services.py` — Recalcular stats despues de cargar eventos
+- `apps/matches/views.py` — endpoints Match/MatchPlayer/MatchEvent con auto-recalc (`_refresh_derived`)
+- `apps/matches/serializers.py` — validate() compatible con PATCH parcial
+- `frontend/src/pages/MatchDetail.tsx` — scoreboard + form resultado + alineaciones + CRUD de eventos (la Fase 1 agrega una 4ta seccion)
+- Las estadisticas basicas se derivan de MatchEvent on-demand (statistics/services.py)
