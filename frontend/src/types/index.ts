@@ -404,3 +404,42 @@ export interface TopMVP {
   country_name: string | null;
   mvp_count: number;
 }
+
+export interface PerformanceLeaderboardEntry {
+  player_id: number;
+  nickname: string;
+  position: string | null;
+  country_name: string | null;
+  matches: number;
+  value: number;
+}
+
+export interface PositionPerfRow {
+  position: string;
+  matches: number;
+  rating: number | null;
+  pass_accuracy_pct: number | null;
+  dribbles: number | null;
+  tackles: number | null;
+  distance_km: number | null;
+  possession_won: number | null;
+}
+
+export interface PlayerMatchSeriesPoint {
+  match: number;
+  date: string | null;
+  home_club_name: string;
+  away_club_name: string;
+  home_goals: number | null;
+  away_goals: number | null;
+  opponent: string;
+  is_home: boolean;
+  rating: number | null;
+  goals: number;
+  assists: number;
+  mvp: number;
+  yellow: number;
+  red: number;
+  minutes_played: number | null;
+  distance_km: number | null;
+}

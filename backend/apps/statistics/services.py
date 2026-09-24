@@ -1,5 +1,5 @@
-from django.db.models import Q, Count
-from apps.matches.models import MatchEvent, Match, MatchPlayer
+from django.db.models import Avg, Q, Count, Sum
+from apps.matches.models import MatchEvent, Match, MatchPlayer, MatchPerformance
 
 
 def get_player_statistics(player, season=None, division=None, league=None, country=None, game=None):
@@ -277,3 +277,171 @@ def get_top_mvp(season=None, division=None, limit=10):
         }
         for m in top_mvp
     ]
+
+
+# --- Analytics sobre MatchPerformance (Fase 3: graficos esenciales) ---
+
+PERFORMANCE_METRICS = (
+    "rating", "goals", "assists", "shots", "shot_accuracy_pct",
+    "passes", "pass_accuracy_pct", "dribbles", "dribble_success_pct",
+    "tackles", "tackle_success_pct", "offsides", "fouls",
+    "possession_won", "possession_lost", "minutes_played",
+    "distance_km", "sprint_distance_km",
+)
+
+POSITIONS = ("ARQ", "DEF", "MED", "DEL")
+
+
+def _perf_queryset(season=None, division=None):
+    qs = MatchPerformance.objects.filter(
+        match_player__player__isnull=False,
+        match_player__match__status=Match.Status.FINISHED,
+    )
+    if season:
+        qs = qs.filter(match_player__match__season=season)
+    if division:
+        qs = qs.filter(match_player__match__division=division)
+    return qs
+
+
+def _num(value, digits=2):
+    if value is None:
+        return None
+    return round(float(value), digits)
+
+
+def get_performance_leaderboard(
+    metric="rating", agg="avg", season=None, division=None,
+    limit=10, min_matches=1,
+):
+    """Ranking de jugadores por cualquier metrica de MatchPerformance.
+
+    agg: "avg" (promedio por partido) o "sum" (total acumulado).
+    min_matches: exige un minimo de apariciones para evitar promedios de 1 partido.
+    """
+    if metric not in PERFORMANCE_METRICS:
+        raise ValueError(f"Métrica inválida: {metric}")
+    if agg not in ("avg", "sum"):
+        raise ValueError("agg debe ser 'avg' o 'sum'")
+
+    aggregate = Avg(metric) if agg == "avg" else Sum(metric)
+    rows = (
+        _perf_queryset(season, division)
+        .values(
+            "match_player__player__id",
+            "match_player__player__nickname",
+            "match_player__player__position",
+            "match_player__player__country__name",
+        )
+        .annotate(value=aggregate, matches=Count("id"))
+        .filter(matches__gte=max(1, min_matches))
+        .order_by("-value", "match_player__player__nickname")[: max(1, min(limit, 50))]
+    )
+    return [
+        {
+            "player_id": row["match_player__player__id"],
+            "nickname": row["match_player__player__nickname"],
+            "position": row["match_player__player__position"],
+            "country_name": row["match_player__player__country__name"],
+            "matches": row["matches"],
+            "value": _num(row["value"]) or 0.0,
+        }
+        for row in rows
+    ]
+
+
+def get_performance_by_position(season=None, division=None):
+    """Promedio de metricas clave agrupadas por posicion (ARQ/DEF/MED/DEL)."""
+    rows = {
+        row["match_player__player__position"]: row
+        for row in (
+            _perf_queryset(season, division)
+            .filter(match_player__player__position__in=POSITIONS)
+            .values("match_player__player__position")
+            .annotate(
+                matches=Count("id"),
+                rating=Avg("rating"),
+                pass_accuracy_pct=Avg("pass_accuracy_pct"),
+                dribbles=Avg("dribbles"),
+                tackles=Avg("tackles"),
+                distance_km=Avg("distance_km"),
+                possession_won=Avg("possession_won"),
+            )
+        )
+    }
+    result = []
+    for pos in POSITIONS:
+        row = rows.get(pos)
+        if not row:
+            result.append({
+                "position": pos, "matches": 0,
+                "rating": None, "pass_accuracy_pct": None,
+                "dribbles": None, "tackles": None,
+                "distance_km": None, "possession_won": None,
+            })
+            continue
+        result.append({
+            "position": pos,
+            "matches": row["matches"],
+            "rating": _num(row["rating"], 1),
+            "pass_accuracy_pct": _num(row["pass_accuracy_pct"], 1),
+            "dribbles": _num(row["dribbles"]),
+            "tackles": _num(row["tackles"]),
+            "distance_km": _num(row["distance_km"], 1),
+            "possession_won": _num(row["possession_won"]),
+        })
+    return result
+
+
+def get_player_match_series(player, limit=100):
+    """Serie cronologica por partido de un jugador: rating/min/km (MatchPerformance)
+    + goles/asistencias/MVP/tarjetas (MatchEvent, la misma fuente que las tarjetas
+    del perfil)."""
+    participations = (
+        MatchPlayer.objects.filter(player=player, match__status=Match.Status.FINISHED)
+        .select_related(
+            "match__home_club_season__club",
+            "match__away_club_season__club",
+            "club_season__club",
+        )
+        .order_by("match__date", "match__id", "id")[:limit]
+    )
+    perf_map = {
+        p.match_player_id: p
+        for p in MatchPerformance.objects.filter(match_player__in=participations)
+    }
+    event_counts: dict[int, dict[str, int]] = {}
+    for row in (
+        MatchEvent.objects.filter(match_player__in=participations)
+        .values("match_player_id", "event_type")
+        .annotate(n=Count("id"))
+    ):
+        event_counts.setdefault(row["match_player_id"], {})[row["event_type"]] = row["n"]
+
+    series = []
+    for mp in participations:
+        match = mp.match
+        is_home = mp.club_season_id == match.home_club_season_id
+        home_name = match.home_club_season.club.name
+        away_name = match.away_club_season.club.name
+        perf = perf_map.get(mp.id)
+        events = event_counts.get(mp.id, {})
+        series.append({
+            "match": match.id,
+            "date": match.date.isoformat() if match.date else None,
+            "home_club_name": home_name,
+            "away_club_name": away_name,
+            "home_goals": match.home_goals,
+            "away_goals": match.away_goals,
+            "opponent": away_name if is_home else home_name,
+            "is_home": is_home,
+            "rating": _num(perf.rating, 1) if perf else None,
+            "goals": events.get(MatchEvent.EventType.GOAL, 0),
+            "assists": events.get(MatchEvent.EventType.ASSIST, 0),
+            "mvp": events.get(MatchEvent.EventType.MVP, 0),
+            "yellow": events.get(MatchEvent.EventType.YELLOW_CARD, 0),
+            "red": events.get(MatchEvent.EventType.RED_CARD, 0),
+            "minutes_played": perf.minutes_played if perf else None,
+            "distance_km": _num(perf.distance_km, 1) if perf else None,
+        })
+    return series

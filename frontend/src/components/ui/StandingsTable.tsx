@@ -51,6 +51,9 @@ export default function StandingsTable({ standings }: StandingsTableProps) {
               <td className="col-pos">{s.position}</td>
               <td className="col-club">
                 <Link to={`/clubs/${s.club}`} style={{ color: "inherit" }}>
+                  <span className="table-club-avatar">
+                    {s.club_name.charAt(0).toUpperCase()}
+                  </span>
                   {s.club_name}
                 </Link>
               </td>

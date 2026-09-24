@@ -1,0 +1,7251 @@
+openapi: 3.0.3
+info:
+  title: EA FC Clubes Pro API
+  version: 1.0.0
+  description: API REST para la plataforma de gestion de ligas de EA Sports FC Clubes
+    Pro
+paths:
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Login'
+          description: ''
+  /api/auth/profile/:
+    get:
+      operationId: auth_profile_retrieve
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Login'
+          description: ''
+  /api/auth/register/:
+    post:
+      operationId: auth_register_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Login'
+          description: ''
+  /api/club-admins/:
+    get:
+      operationId: club_admins_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - club-admins
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedClubAdminList'
+          description: ''
+    post:
+      operationId: club_admins_create
+      tags:
+      - club-admins
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClubAdminRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClubAdminRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClubAdminRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClubAdmin'
+          description: ''
+  /api/club-admins/{id}/:
+    get:
+      operationId: club_admins_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Administrador de
+          Club.
+        required: true
+      tags:
+      - club-admins
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClubAdmin'
+          description: ''
+    put:
+      operationId: club_admins_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Administrador de
+          Club.
+        required: true
+      tags:
+      - club-admins
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClubAdminRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClubAdminRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClubAdminRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClubAdmin'
+          description: ''
+    patch:
+      operationId: club_admins_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Administrador de
+          Club.
+        required: true
+      tags:
+      - club-admins
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedClubAdminRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedClubAdminRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedClubAdminRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClubAdmin'
+          description: ''
+    delete:
+      operationId: club_admins_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Administrador de
+          Club.
+        required: true
+      tags:
+      - club-admins
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/club-seasons/:
+    get:
+      operationId: club_seasons_retrieve
+      tags:
+      - club-seasons
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: club_seasons_create
+      tags:
+      - club-seasons
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          description: No response body
+  /api/club-seasons/{id}/:
+    get:
+      operationId: club_seasons_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Club por Temporada.
+        required: true
+      tags:
+      - club-seasons
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: club_seasons_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Club por Temporada.
+        required: true
+      tags:
+      - club-seasons
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: club_seasons_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Club por Temporada.
+        required: true
+      tags:
+      - club-seasons
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: club_seasons_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Club por Temporada.
+        required: true
+      tags:
+      - club-seasons
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/club-titles/:
+    get:
+      operationId: club_titles_list
+      parameters:
+      - in: query
+        name: club
+        schema:
+          type: integer
+      - in: query
+        name: division
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      - in: query
+        name: season
+        schema:
+          type: integer
+      - in: query
+        name: title_type
+        schema:
+          type: string
+          enum:
+          - CHAMPION
+          - PLAYOFF_WINNER
+          - PROMOTION_WINNER
+          - RUNNER_UP
+        description: |-
+          * `CHAMPION` - Campeón
+          * `RUNNER_UP` - Subcampeón
+          * `PLAYOFF_WINNER` - Ganador del Reducido
+          * `PROMOTION_WINNER` - Ganador de Promoción
+      tags:
+      - club-titles
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedClubTitleList'
+          description: ''
+    post:
+      operationId: club_titles_create
+      tags:
+      - club-titles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClubTitleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClubTitleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClubTitleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClubTitle'
+          description: ''
+  /api/club-titles/{id}/:
+    get:
+      operationId: club_titles_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Título de Club.
+        required: true
+      tags:
+      - club-titles
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClubTitle'
+          description: ''
+    put:
+      operationId: club_titles_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Título de Club.
+        required: true
+      tags:
+      - club-titles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClubTitleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClubTitleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClubTitleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClubTitle'
+          description: ''
+    patch:
+      operationId: club_titles_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Título de Club.
+        required: true
+      tags:
+      - club-titles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedClubTitleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedClubTitleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedClubTitleRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClubTitle'
+          description: ''
+    delete:
+      operationId: club_titles_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Título de Club.
+        required: true
+      tags:
+      - club-titles
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/clubs/:
+    get:
+      operationId: clubs_list
+      parameters:
+      - in: query
+        name: country
+        schema:
+          type: integer
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - clubs
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedClubList'
+          description: ''
+    post:
+      operationId: clubs_create
+      tags:
+      - clubs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClubRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClubRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClubRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Club'
+          description: ''
+  /api/clubs/{id}/:
+    get:
+      operationId: clubs_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Club.
+        required: true
+      tags:
+      - clubs
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClubDetail'
+          description: ''
+    put:
+      operationId: clubs_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Club.
+        required: true
+      tags:
+      - clubs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClubRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClubRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClubRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Club'
+          description: ''
+    patch:
+      operationId: clubs_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Club.
+        required: true
+      tags:
+      - clubs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedClubRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedClubRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedClubRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Club'
+          description: ''
+    delete:
+      operationId: clubs_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Club.
+        required: true
+      tags:
+      - clubs
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/countries/:
+    get:
+      operationId: countries_list
+      parameters:
+      - in: query
+        name: code
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - countries
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCountryList'
+          description: ''
+    post:
+      operationId: countries_create
+      tags:
+      - countries
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CountryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CountryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CountryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Country'
+          description: ''
+  /api/countries/{id}/:
+    get:
+      operationId: countries_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este País.
+        required: true
+      tags:
+      - countries
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Country'
+          description: ''
+    put:
+      operationId: countries_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este País.
+        required: true
+      tags:
+      - countries
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CountryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CountryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CountryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Country'
+          description: ''
+    patch:
+      operationId: countries_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este País.
+        required: true
+      tags:
+      - countries
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCountryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCountryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCountryRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Country'
+          description: ''
+    delete:
+      operationId: countries_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este País.
+        required: true
+      tags:
+      - countries
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/divisions/:
+    get:
+      operationId: divisions_list
+      parameters:
+      - in: query
+        name: order
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      - in: query
+        name: season
+        schema:
+          type: integer
+      tags:
+      - divisions
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDivisionList'
+          description: ''
+    post:
+      operationId: divisions_create
+      tags:
+      - divisions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DivisionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DivisionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DivisionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Division'
+          description: ''
+  /api/divisions/{id}/:
+    get:
+      operationId: divisions_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este División.
+        required: true
+      tags:
+      - divisions
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Division'
+          description: ''
+    put:
+      operationId: divisions_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este División.
+        required: true
+      tags:
+      - divisions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DivisionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DivisionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DivisionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Division'
+          description: ''
+    patch:
+      operationId: divisions_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este División.
+        required: true
+      tags:
+      - divisions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDivisionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDivisionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDivisionRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Division'
+          description: ''
+    delete:
+      operationId: divisions_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este División.
+        required: true
+      tags:
+      - divisions
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/formats/:
+    get:
+      operationId: formats_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - formats
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCompetitionFormatList'
+          description: ''
+    post:
+      operationId: formats_create
+      tags:
+      - formats
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompetitionFormatRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CompetitionFormatRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CompetitionFormatRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionFormat'
+          description: ''
+  /api/formats/{id}/:
+    get:
+      operationId: formats_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Formato de Competición.
+        required: true
+      tags:
+      - formats
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionFormat'
+          description: ''
+    put:
+      operationId: formats_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Formato de Competición.
+        required: true
+      tags:
+      - formats
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompetitionFormatRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CompetitionFormatRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CompetitionFormatRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionFormat'
+          description: ''
+    patch:
+      operationId: formats_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Formato de Competición.
+        required: true
+      tags:
+      - formats
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCompetitionFormatRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCompetitionFormatRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCompetitionFormatRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionFormat'
+          description: ''
+    delete:
+      operationId: formats_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Formato de Competición.
+        required: true
+      tags:
+      - formats
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/games/:
+    get:
+      operationId: games_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      - in: query
+        name: year
+        schema:
+          type: integer
+      tags:
+      - games
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedGameList'
+          description: ''
+    post:
+      operationId: games_create
+      tags:
+      - games
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GameRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GameRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+          description: ''
+  /api/games/{id}/:
+    get:
+      operationId: games_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Juego.
+        required: true
+      tags:
+      - games
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+          description: ''
+    put:
+      operationId: games_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Juego.
+        required: true
+      tags:
+      - games
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GameRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GameRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+          description: ''
+    patch:
+      operationId: games_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Juego.
+        required: true
+      tags:
+      - games
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedGameRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedGameRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedGameRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+          description: ''
+    delete:
+      operationId: games_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Juego.
+        required: true
+      tags:
+      - games
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/league-admins/:
+    get:
+      operationId: league_admins_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - league-admins
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLeagueAdminList'
+          description: ''
+    post:
+      operationId: league_admins_create
+      tags:
+      - league-admins
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeagueAdminRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LeagueAdminRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LeagueAdminRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeagueAdmin'
+          description: ''
+  /api/league-admins/{id}/:
+    get:
+      operationId: league_admins_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Administrador de
+          Liga.
+        required: true
+      tags:
+      - league-admins
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeagueAdmin'
+          description: ''
+    put:
+      operationId: league_admins_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Administrador de
+          Liga.
+        required: true
+      tags:
+      - league-admins
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeagueAdminRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LeagueAdminRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LeagueAdminRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeagueAdmin'
+          description: ''
+    patch:
+      operationId: league_admins_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Administrador de
+          Liga.
+        required: true
+      tags:
+      - league-admins
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLeagueAdminRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLeagueAdminRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLeagueAdminRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeagueAdmin'
+          description: ''
+    delete:
+      operationId: league_admins_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Administrador de
+          Liga.
+        required: true
+      tags:
+      - league-admins
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/leagues/:
+    get:
+      operationId: leagues_list
+      parameters:
+      - in: query
+        name: country
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - leagues
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLeagueList'
+          description: ''
+    post:
+      operationId: leagues_create
+      tags:
+      - leagues
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeagueRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LeagueRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LeagueRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/League'
+          description: ''
+  /api/leagues/{id}/:
+    get:
+      operationId: leagues_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Liga.
+        required: true
+      tags:
+      - leagues
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/League'
+          description: ''
+    put:
+      operationId: leagues_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Liga.
+        required: true
+      tags:
+      - leagues
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeagueRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LeagueRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LeagueRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/League'
+          description: ''
+    patch:
+      operationId: leagues_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Liga.
+        required: true
+      tags:
+      - leagues
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLeagueRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLeagueRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLeagueRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/League'
+          description: ''
+    delete:
+      operationId: leagues_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Liga.
+        required: true
+      tags:
+      - leagues
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/match-events/:
+    get:
+      operationId: match_events_list
+      parameters:
+      - in: query
+        name: event_type
+        schema:
+          type: string
+          enum:
+          - ASSIST
+          - GOAL
+          - MVP
+          - OWN_GOAL
+          - RED_CARD
+          - YELLOW_CARD
+        description: |-
+          * `GOAL` - Gol
+          * `OWN_GOAL` - Gol en Contra
+          * `ASSIST` - Asistencia
+          * `YELLOW_CARD` - Tarjeta Amarilla
+          * `RED_CARD` - Tarjeta Roja
+          * `MVP` - MVP
+      - in: query
+        name: match
+        schema:
+          type: integer
+      - in: query
+        name: match_player
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - match-events
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMatchEventList'
+          description: ''
+    post:
+      operationId: match_events_create
+      tags:
+      - match-events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchEventRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchEventRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchEventRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchEvent'
+          description: ''
+  /api/match-events/{id}/:
+    get:
+      operationId: match_events_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Evento del Partido.
+        required: true
+      tags:
+      - match-events
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchEvent'
+          description: ''
+    put:
+      operationId: match_events_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Evento del Partido.
+        required: true
+      tags:
+      - match-events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchEventRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchEventRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchEventRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchEvent'
+          description: ''
+    patch:
+      operationId: match_events_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Evento del Partido.
+        required: true
+      tags:
+      - match-events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMatchEventRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMatchEventRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMatchEventRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchEvent'
+          description: ''
+    delete:
+      operationId: match_events_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Evento del Partido.
+        required: true
+      tags:
+      - match-events
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/match-performances/:
+    get:
+      operationId: match_performances_list
+      parameters:
+      - in: query
+        name: match
+        schema:
+          type: integer
+      - in: query
+        name: match_player
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - in: query
+        name: player
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - match-performances
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMatchPerformanceList'
+          description: ''
+    post:
+      operationId: match_performances_create
+      tags:
+      - match-performances
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchPerformanceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchPerformanceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchPerformanceRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchPerformance'
+          description: ''
+  /api/match-performances/{id}/:
+    get:
+      operationId: match_performances_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Rendimiento del
+          Partido.
+        required: true
+      tags:
+      - match-performances
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchPerformance'
+          description: ''
+    put:
+      operationId: match_performances_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Rendimiento del
+          Partido.
+        required: true
+      tags:
+      - match-performances
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchPerformanceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchPerformanceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchPerformanceRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchPerformance'
+          description: ''
+    patch:
+      operationId: match_performances_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Rendimiento del
+          Partido.
+        required: true
+      tags:
+      - match-performances
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMatchPerformanceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMatchPerformanceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMatchPerformanceRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchPerformance'
+          description: ''
+    delete:
+      operationId: match_performances_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Rendimiento del
+          Partido.
+        required: true
+      tags:
+      - match-performances
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/match-players/:
+    get:
+      operationId: match_players_list
+      parameters:
+      - in: query
+        name: club_season
+        schema:
+          type: integer
+      - in: query
+        name: match
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - in: query
+        name: player
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - match-players
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMatchPlayerList'
+          description: ''
+    post:
+      operationId: match_players_create
+      tags:
+      - match-players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchPlayerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchPlayerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchPlayerRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchPlayer'
+          description: ''
+  /api/match-players/{id}/:
+    get:
+      operationId: match_players_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Jugador del Partido.
+        required: true
+      tags:
+      - match-players
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchPlayer'
+          description: ''
+    put:
+      operationId: match_players_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Jugador del Partido.
+        required: true
+      tags:
+      - match-players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchPlayerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchPlayerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchPlayerRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchPlayer'
+          description: ''
+    patch:
+      operationId: match_players_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Jugador del Partido.
+        required: true
+      tags:
+      - match-players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMatchPlayerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMatchPlayerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMatchPlayerRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchPlayer'
+          description: ''
+    delete:
+      operationId: match_players_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Jugador del Partido.
+        required: true
+      tags:
+      - match-players
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/matchdays/:
+    get:
+      operationId: matchdays_list
+      parameters:
+      - in: query
+        name: division
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      - in: query
+        name: season
+        schema:
+          type: integer
+      tags:
+      - matchdays
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMatchdayList'
+          description: ''
+    post:
+      operationId: matchdays_create
+      tags:
+      - matchdays
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchdayRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchdayRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchdayRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Matchday'
+          description: ''
+  /api/matchdays/{id}/:
+    get:
+      operationId: matchdays_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Jornada.
+        required: true
+      tags:
+      - matchdays
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Matchday'
+          description: ''
+    put:
+      operationId: matchdays_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Jornada.
+        required: true
+      tags:
+      - matchdays
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchdayRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchdayRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchdayRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Matchday'
+          description: ''
+    patch:
+      operationId: matchdays_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Jornada.
+        required: true
+      tags:
+      - matchdays
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMatchdayRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMatchdayRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMatchdayRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Matchday'
+          description: ''
+    delete:
+      operationId: matchdays_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Jornada.
+        required: true
+      tags:
+      - matchdays
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/matches/:
+    get:
+      operationId: matches_list
+      parameters:
+      - in: query
+        name: division
+        schema:
+          type: integer
+      - in: query
+        name: matchday
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      - in: query
+        name: season
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - CANCELLED
+          - FINISHED
+          - IN_PROGRESS
+          - POSTPONED
+          - SCHEDULED
+        description: |-
+          * `SCHEDULED` - Programado
+          * `IN_PROGRESS` - En Juego
+          * `FINISHED` - Finalizado
+          * `POSTPONED` - Aplazado
+          * `CANCELLED` - Cancelado
+      tags:
+      - matches
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMatchList'
+          description: ''
+    post:
+      operationId: matches_create
+      tags:
+      - matches
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+          description: ''
+  /api/matches/{id}/:
+    get:
+      operationId: matches_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Partido.
+        required: true
+      tags:
+      - matches
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchDetail'
+          description: ''
+    put:
+      operationId: matches_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Partido.
+        required: true
+      tags:
+      - matches
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+          description: ''
+    patch:
+      operationId: matches_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Partido.
+        required: true
+      tags:
+      - matches
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMatchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMatchRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMatchRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+          description: ''
+    delete:
+      operationId: matches_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Partido.
+        required: true
+      tags:
+      - matches
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/matches/{id}/performances/analyze/:
+    post:
+      operationId: matches_performances_analyze_create
+      description: |-
+        Analiza capturas FIFA con OCR y devuelve stats sugeridas (sin persistir).
+
+        Multipart con `images` (≤30, ≤20MB c/u). Las imágenes se descartan
+        al terminar. El guardado se hace después vía performances/batch.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Partido.
+        required: true
+      tags:
+      - matches
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+          description: ''
+  /api/matches/{id}/performances/batch/:
+    post:
+      operationId: matches_performances_batch_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Partido.
+        required: true
+      tags:
+      - matches
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+          description: ''
+  /api/player-club-history/:
+    get:
+      operationId: player_club_history_list
+      parameters:
+      - in: query
+        name: club_season
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - in: query
+        name: player
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - player-club-history
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPlayerClubHistoryList'
+          description: ''
+    post:
+      operationId: player_club_history_create
+      tags:
+      - player-club-history
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerClubHistoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlayerClubHistoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlayerClubHistoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerClubHistory'
+          description: ''
+  /api/player-club-history/{id}/:
+    get:
+      operationId: player_club_history_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Historial de Club
+          del Jugador.
+        required: true
+      tags:
+      - player-club-history
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerClubHistory'
+          description: ''
+    put:
+      operationId: player_club_history_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Historial de Club
+          del Jugador.
+        required: true
+      tags:
+      - player-club-history
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerClubHistoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlayerClubHistoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlayerClubHistoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerClubHistory'
+          description: ''
+    patch:
+      operationId: player_club_history_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Historial de Club
+          del Jugador.
+        required: true
+      tags:
+      - player-club-history
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerClubHistoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerClubHistoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerClubHistoryRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerClubHistory'
+          description: ''
+    delete:
+      operationId: player_club_history_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Historial de Club
+          del Jugador.
+        required: true
+      tags:
+      - player-club-history
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/player-identity-history/:
+    get:
+      operationId: player_identity_history_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - in: query
+        name: player
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - player-identity-history
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPlayerIdentityHistoryList'
+          description: ''
+    post:
+      operationId: player_identity_history_create
+      tags:
+      - player-identity-history
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerIdentityHistoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlayerIdentityHistoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlayerIdentityHistoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerIdentityHistory'
+          description: ''
+  /api/player-identity-history/{id}/:
+    get:
+      operationId: player_identity_history_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Historial de Identidad.
+        required: true
+      tags:
+      - player-identity-history
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerIdentityHistory'
+          description: ''
+    put:
+      operationId: player_identity_history_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Historial de Identidad.
+        required: true
+      tags:
+      - player-identity-history
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerIdentityHistoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlayerIdentityHistoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlayerIdentityHistoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerIdentityHistory'
+          description: ''
+    patch:
+      operationId: player_identity_history_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Historial de Identidad.
+        required: true
+      tags:
+      - player-identity-history
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerIdentityHistoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerIdentityHistoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerIdentityHistoryRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerIdentityHistory'
+          description: ''
+    delete:
+      operationId: player_identity_history_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Historial de Identidad.
+        required: true
+      tags:
+      - player-identity-history
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/players/:
+    get:
+      operationId: players_list
+      parameters:
+      - in: query
+        name: country
+        schema:
+          type: integer
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - in: query
+        name: platform
+        schema:
+          type: string
+          nullable: true
+          enum:
+          - PC
+          - PLAYSTATION
+          - XBOX
+        description: |-
+          * `PLAYSTATION` - PlayStation
+          * `XBOX` - Xbox
+          * `PC` - PC
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - players
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPlayerList'
+          description: ''
+    post:
+      operationId: players_create
+      tags:
+      - players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlayerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlayerRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Player'
+          description: ''
+  /api/players/{id}/:
+    get:
+      operationId: players_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Jugador.
+        required: true
+      tags:
+      - players
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerDetail'
+          description: ''
+    put:
+      operationId: players_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Jugador.
+        required: true
+      tags:
+      - players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlayerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlayerRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Player'
+          description: ''
+    patch:
+      operationId: players_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Jugador.
+        required: true
+      tags:
+      - players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Player'
+          description: ''
+    delete:
+      operationId: players_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Jugador.
+        required: true
+      tags:
+      - players
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/players/{id}/performances/:
+    get:
+      operationId: players_performances_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Jugador.
+        required: true
+      tags:
+      - players
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Player'
+          description: ''
+  /api/seasons/:
+    get:
+      operationId: seasons_list
+      parameters:
+      - in: query
+        name: game
+        schema:
+          type: integer
+      - in: query
+        name: league
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - ACTIVE
+          - FINISHED
+          - UPCOMING
+        description: |-
+          * `UPCOMING` - Próxima
+          * `ACTIVE` - Activa
+          * `FINISHED` - Finalizada
+      tags:
+      - seasons
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSeasonListList'
+          description: ''
+    post:
+      operationId: seasons_create
+      tags:
+      - seasons
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SeasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SeasonRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Season'
+          description: ''
+  /api/seasons/{id}/:
+    get:
+      operationId: seasons_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Temporada.
+        required: true
+      tags:
+      - seasons
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Season'
+          description: ''
+    put:
+      operationId: seasons_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Temporada.
+        required: true
+      tags:
+      - seasons
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SeasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SeasonRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Season'
+          description: ''
+    patch:
+      operationId: seasons_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Temporada.
+        required: true
+      tags:
+      - seasons
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSeasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSeasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSeasonRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Season'
+          description: ''
+    delete:
+      operationId: seasons_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Temporada.
+        required: true
+      tags:
+      - seasons
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/standings/:
+    get:
+      operationId: standings_list
+      parameters:
+      - in: query
+        name: club_season
+        schema:
+          type: integer
+      - in: query
+        name: division
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      - in: query
+        name: season
+        schema:
+          type: integer
+      tags:
+      - standings
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStandingList'
+          description: ''
+    post:
+      operationId: standings_create
+      tags:
+      - standings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StandingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StandingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StandingRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Standing'
+          description: ''
+  /api/standings/{id}/:
+    get:
+      operationId: standings_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Posición.
+        required: true
+      tags:
+      - standings
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Standing'
+          description: ''
+    put:
+      operationId: standings_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Posición.
+        required: true
+      tags:
+      - standings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StandingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StandingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StandingRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Standing'
+          description: ''
+    patch:
+      operationId: standings_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Posición.
+        required: true
+      tags:
+      - standings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStandingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedStandingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedStandingRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Standing'
+          description: ''
+    delete:
+      operationId: standings_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Posición.
+        required: true
+      tags:
+      - standings
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/standings/recalculate/:
+    post:
+      operationId: standings_recalculate_create
+      tags:
+      - standings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StandingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StandingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StandingRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Standing'
+          description: ''
+  /api/statistics/performance_by_position/:
+    get:
+      operationId: statistics_performance_by_position_retrieve
+      description: Promedios de metricas clave por posicion (ARQ/DEF/MED/DEL).
+      tags:
+      - statistics
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopScorer'
+          description: ''
+  /api/statistics/performance_leaderboard/:
+    get:
+      operationId: statistics_performance_leaderboard_retrieve
+      description: Ranking por cualquier metrica de MatchPerformance (avg o sum).
+      tags:
+      - statistics
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopScorer'
+          description: ''
+  /api/statistics/player/:
+    get:
+      operationId: statistics_player_retrieve
+      tags:
+      - statistics
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopScorer'
+          description: ''
+  /api/statistics/player_history/:
+    get:
+      operationId: statistics_player_history_retrieve
+      tags:
+      - statistics
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopScorer'
+          description: ''
+  /api/statistics/player_match_series/:
+    get:
+      operationId: statistics_player_match_series_retrieve
+      description: Serie por partido de un jugador (rating fisico + eventos).
+      tags:
+      - statistics
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopScorer'
+          description: ''
+  /api/statistics/top_assists/:
+    get:
+      operationId: statistics_top_assists_retrieve
+      tags:
+      - statistics
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopScorer'
+          description: ''
+  /api/statistics/top_mvp/:
+    get:
+      operationId: statistics_top_mvp_retrieve
+      tags:
+      - statistics
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopScorer'
+          description: ''
+  /api/statistics/top_scorers/:
+    get:
+      operationId: statistics_top_scorers_retrieve
+      tags:
+      - statistics
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopScorer'
+          description: ''
+  /api/token/refresh/:
+    post:
+      operationId: token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/transfers/:
+    get:
+      operationId: transfers_list
+      parameters:
+      - in: query
+        name: date
+        schema:
+          type: string
+          format: date
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - in: query
+        name: player
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - transfers
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTransferList'
+          description: ''
+    post:
+      operationId: transfers_create
+      tags:
+      - transfers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transfer'
+          description: ''
+  /api/transfers/{id}/:
+    get:
+      operationId: transfers_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Transferencia.
+        required: true
+      tags:
+      - transfers
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transfer'
+          description: ''
+    put:
+      operationId: transfers_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Transferencia.
+        required: true
+      tags:
+      - transfers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transfer'
+          description: ''
+    patch:
+      operationId: transfers_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Transferencia.
+        required: true
+      tags:
+      - transfers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTransferRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTransferRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTransferRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transfer'
+          description: ''
+    delete:
+      operationId: transfers_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Transferencia.
+        required: true
+      tags:
+      - transfers
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/users/:
+    get:
+      operationId: users_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserList'
+          description: ''
+    post:
+      operationId: users_create
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/{id}/:
+    get:
+      operationId: users_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Usuario.
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    put:
+      operationId: users_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Usuario.
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: users_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Usuario.
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    delete:
+      operationId: users_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Usuario.
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+components:
+  schemas:
+    BlankEnum:
+      enum:
+      - ''
+    Club:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        short_name:
+          type: string
+          maxLength: 20
+        logo:
+          type: string
+          format: uri
+          nullable: true
+        country:
+          type: integer
+        country_name:
+          type: string
+          readOnly: true
+        founded_date:
+          type: string
+          format: date
+          nullable: true
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - country
+      - country_name
+      - created_at
+      - id
+      - name
+      - short_name
+    ClubAdmin:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+        club:
+          type: integer
+        username:
+          type: string
+          readOnly: true
+        club_name:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - club
+      - club_name
+      - created_at
+      - id
+      - user
+      - username
+    ClubAdminRequest:
+      type: object
+      properties:
+        user:
+          type: integer
+        club:
+          type: integer
+      required:
+      - club
+      - user
+    ClubDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        short_name:
+          type: string
+          maxLength: 20
+        logo:
+          type: string
+          format: uri
+          nullable: true
+        country:
+          type: integer
+        country_name:
+          type: string
+          readOnly: true
+        founded_date:
+          type: string
+          format: date
+          nullable: true
+        is_active:
+          type: boolean
+        seasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClubSeason'
+          readOnly: true
+        titles:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClubTitle'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - country
+      - country_name
+      - created_at
+      - id
+      - name
+      - seasons
+      - short_name
+      - titles
+    ClubRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        short_name:
+          type: string
+          minLength: 1
+          maxLength: 20
+        logo:
+          type: string
+          format: binary
+          nullable: true
+        country:
+          type: integer
+        founded_date:
+          type: string
+          format: date
+          nullable: true
+        is_active:
+          type: boolean
+      required:
+      - country
+      - name
+      - short_name
+    ClubSeason:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        club:
+          type: integer
+        season:
+          type: integer
+        division:
+          type: integer
+        status:
+          $ref: '#/components/schemas/ClubSeasonStatusEnum'
+        club_name:
+          type: string
+          readOnly: true
+        season_name:
+          type: string
+          readOnly: true
+        division_name:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - club
+      - club_name
+      - created_at
+      - division
+      - division_name
+      - id
+      - season
+      - season_name
+    ClubSeasonStatusEnum:
+      enum:
+      - ACTIVE
+      - RELEGATED
+      - PROMOTED
+      - WITHDRAWN
+      type: string
+      description: |-
+        * `ACTIVE` - Activo
+        * `RELEGATED` - Descendido
+        * `PROMOTED` - Ascendido
+        * `WITHDRAWN` - Retirado
+    ClubTitle:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        club:
+          type: integer
+        season:
+          type: integer
+        division:
+          type: integer
+          nullable: true
+        title_type:
+          $ref: '#/components/schemas/TitleTypeEnum'
+        name:
+          type: string
+          maxLength: 200
+        awarded_at:
+          type: string
+          format: date-time
+        awarded_by:
+          type: integer
+          readOnly: true
+        notes:
+          type: string
+          nullable: true
+        club_name:
+          type: string
+          readOnly: true
+        season_name:
+          type: string
+          readOnly: true
+        division_name:
+          type: string
+          readOnly: true
+        awarded_by_username:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - awarded_by
+      - awarded_by_username
+      - club
+      - club_name
+      - created_at
+      - division_name
+      - id
+      - name
+      - season
+      - season_name
+      - title_type
+    ClubTitleRequest:
+      type: object
+      properties:
+        club:
+          type: integer
+        season:
+          type: integer
+        division:
+          type: integer
+          nullable: true
+        title_type:
+          $ref: '#/components/schemas/TitleTypeEnum'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        awarded_at:
+          type: string
+          format: date-time
+        notes:
+          type: string
+          nullable: true
+      required:
+      - club
+      - name
+      - season
+      - title_type
+    CompetitionFormat:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        format_type:
+          $ref: '#/components/schemas/FormatTypeEnum'
+        has_playoffs:
+          type: boolean
+        description:
+          type: string
+          nullable: true
+      required:
+      - format_type
+      - id
+      - name
+    CompetitionFormatRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        format_type:
+          $ref: '#/components/schemas/FormatTypeEnum'
+        has_playoffs:
+          type: boolean
+        description:
+          type: string
+          nullable: true
+      required:
+      - format_type
+      - name
+    Country:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        code:
+          type: string
+          description: ISO 3166-1 alpha-2
+          maxLength: 2
+        flag_url:
+          nullable: true
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+      required:
+      - code
+      - id
+      - name
+    CountryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        code:
+          type: string
+          minLength: 1
+          description: ISO 3166-1 alpha-2
+          maxLength: 2
+        flag_url:
+          nullable: true
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+      required:
+      - code
+      - name
+    Division:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        season:
+          type: integer
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Order within the season (1=first, 2=second, etc.)
+        max_clubs:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        playoff_zone_start:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        playoff_zone_end:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        promotion_zone_start:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        promotion_zone_end:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        relegation_zone_start:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        relegation_zone_end:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        has_relegation:
+          type: boolean
+      required:
+      - id
+      - name
+      - order
+      - season
+    DivisionRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        season:
+          type: integer
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Order within the season (1=first, 2=second, etc.)
+        max_clubs:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        playoff_zone_start:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        playoff_zone_end:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        promotion_zone_start:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        promotion_zone_end:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        relegation_zone_start:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        relegation_zone_end:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        has_relegation:
+          type: boolean
+      required:
+      - name
+      - order
+      - season
+    EventTypeEnum:
+      enum:
+      - GOAL
+      - OWN_GOAL
+      - ASSIST
+      - YELLOW_CARD
+      - RED_CARD
+      - MVP
+      type: string
+      description: |-
+        * `GOAL` - Gol
+        * `OWN_GOAL` - Gol en Contra
+        * `ASSIST` - Asistencia
+        * `YELLOW_CARD` - Tarjeta Amarilla
+        * `RED_CARD` - Tarjeta Roja
+        * `MVP` - MVP
+    FormatTypeEnum:
+      enum:
+      - ROUND_ROBIN
+      - DOUBLE_ROUND_ROBIN
+      - CUSTOM
+      type: string
+      description: |-
+        * `ROUND_ROBIN` - Liga (Todos contra todos)
+        * `DOUBLE_ROUND_ROBIN` - Liga doble (Ida y vuelta)
+        * `CUSTOM` - Personalizado
+    Game:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 50
+        year:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+      required:
+      - id
+      - name
+      - year
+    GameRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        year:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+      required:
+      - name
+      - year
+    League:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        country:
+          type: integer
+        country_name:
+          type: string
+          readOnly: true
+      required:
+      - country
+      - country_name
+      - id
+      - name
+    LeagueAdmin:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+        league:
+          type: integer
+        username:
+          type: string
+          readOnly: true
+        league_name:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - league
+      - league_name
+      - user
+      - username
+    LeagueAdminRequest:
+      type: object
+      properties:
+        user:
+          type: integer
+        league:
+          type: integer
+      required:
+      - league
+      - user
+    LeagueRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        country:
+          type: integer
+      required:
+      - country
+      - name
+    Login:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+      - password
+      - username
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+      required:
+      - password
+      - username
+    Match:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        season:
+          type: integer
+        division:
+          type: integer
+        matchday:
+          type: integer
+          nullable: true
+        home_club_season:
+          type: integer
+        away_club_season:
+          type: integer
+        home_goals:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        away_goals:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        date:
+          type: string
+          format: date
+          nullable: true
+        time:
+          type: string
+          format: time
+          nullable: true
+        status:
+          $ref: '#/components/schemas/Status25bEnum'
+        home_club_name:
+          type: string
+          readOnly: true
+        away_club_name:
+          type: string
+          readOnly: true
+        season_name:
+          type: string
+          readOnly: true
+        division_name:
+          type: string
+          readOnly: true
+        matchday_name:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - away_club_name
+      - away_club_season
+      - created_at
+      - division
+      - division_name
+      - home_club_name
+      - home_club_season
+      - id
+      - matchday_name
+      - season
+      - season_name
+      - updated_at
+    MatchDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        season:
+          type: integer
+        division:
+          type: integer
+        matchday:
+          type: integer
+          nullable: true
+        home_club_season:
+          type: integer
+        away_club_season:
+          type: integer
+        home_goals:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        away_goals:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        date:
+          type: string
+          format: date
+          nullable: true
+        time:
+          type: string
+          format: time
+          nullable: true
+        status:
+          $ref: '#/components/schemas/Status25bEnum'
+        home_club_name:
+          type: string
+          readOnly: true
+        away_club_name:
+          type: string
+          readOnly: true
+        season_name:
+          type: string
+          readOnly: true
+        division_name:
+          type: string
+          readOnly: true
+        matchday_name:
+          type: string
+          readOnly: true
+        match_players:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatchPlayer'
+          readOnly: true
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatchEvent'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - away_club_name
+      - away_club_season
+      - created_at
+      - division
+      - division_name
+      - events
+      - home_club_name
+      - home_club_season
+      - id
+      - match_players
+      - matchday_name
+      - season
+      - season_name
+      - updated_at
+    MatchEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        match:
+          type: integer
+        match_player:
+          type: integer
+        event_type:
+          $ref: '#/components/schemas/EventTypeEnum'
+        minute:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        player_nickname:
+          type: string
+          readOnly: true
+        display_name:
+          type: string
+          readOnly: true
+        club_name:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - club_name
+      - created_at
+      - display_name
+      - event_type
+      - id
+      - match
+      - match_player
+      - player_nickname
+    MatchEventRequest:
+      type: object
+      properties:
+        match:
+          type: integer
+        match_player:
+          type: integer
+        event_type:
+          $ref: '#/components/schemas/EventTypeEnum'
+        minute:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+      required:
+      - event_type
+      - match
+      - match_player
+    MatchPerformance:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        match_player:
+          type: integer
+        match:
+          type: integer
+          readOnly: true
+        player:
+          type: integer
+          readOnly: true
+        player_nickname:
+          type: string
+          readOnly: true
+        display_name:
+          type: string
+          readOnly: true
+        club_name:
+          type: string
+          readOnly: true
+        match_date:
+          type: string
+          format: date
+          readOnly: true
+        home_club_name:
+          type: string
+          readOnly: true
+        away_club_name:
+          type: string
+          readOnly: true
+        home_goals:
+          type: integer
+          readOnly: true
+        away_goals:
+          type: integer
+          readOnly: true
+        rival_name:
+          type: string
+          readOnly: true
+        rating:
+          type: number
+          format: double
+          maximum: 10
+          minimum: 0
+        goals:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        assists:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        shots:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        shot_accuracy_pct:
+          type: integer
+          maximum: 100
+          minimum: 0
+        passes:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        pass_accuracy_pct:
+          type: integer
+          maximum: 100
+          minimum: 0
+        dribbles:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        dribble_success_pct:
+          type: integer
+          maximum: 100
+          minimum: 0
+        tackles:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        tackle_success_pct:
+          type: integer
+          maximum: 100
+          minimum: 0
+        offsides:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        fouls:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        possession_won:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        possession_lost:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        minutes_played:
+          type: integer
+          maximum: 130
+          minimum: 0
+        distance_km:
+          type: number
+          format: double
+          maximum: 999.9
+          minimum: 0
+          default: 0.0
+        sprint_distance_km:
+          type: number
+          format: double
+          maximum: 999.9
+          minimum: 0
+          default: 0.0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - away_club_name
+      - away_goals
+      - club_name
+      - created_at
+      - display_name
+      - home_club_name
+      - home_goals
+      - id
+      - match
+      - match_date
+      - match_player
+      - player
+      - player_nickname
+      - rating
+      - rival_name
+      - updated_at
+    MatchPerformanceRequest:
+      type: object
+      properties:
+        match_player:
+          type: integer
+        rating:
+          type: number
+          format: double
+          maximum: 10
+          minimum: 0
+        goals:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        assists:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        shots:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        shot_accuracy_pct:
+          type: integer
+          maximum: 100
+          minimum: 0
+        passes:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        pass_accuracy_pct:
+          type: integer
+          maximum: 100
+          minimum: 0
+        dribbles:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        dribble_success_pct:
+          type: integer
+          maximum: 100
+          minimum: 0
+        tackles:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        tackle_success_pct:
+          type: integer
+          maximum: 100
+          minimum: 0
+        offsides:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        fouls:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        possession_won:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        possession_lost:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        minutes_played:
+          type: integer
+          maximum: 130
+          minimum: 0
+        distance_km:
+          type: number
+          format: double
+          maximum: 999.9
+          minimum: 0
+          default: 0.0
+        sprint_distance_km:
+          type: number
+          format: double
+          maximum: 999.9
+          minimum: 0
+          default: 0.0
+      required:
+      - match_player
+      - rating
+    MatchPlayer:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        match:
+          type: integer
+        player:
+          type: integer
+          nullable: true
+          description: NULL represents a BOT
+        club_season:
+          type: integer
+        display_name:
+          type: string
+          maxLength: 100
+        is_starter:
+          type: boolean
+        player_nickname:
+          type: string
+          readOnly: true
+        club_name:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - club_name
+      - club_season
+      - created_at
+      - display_name
+      - id
+      - match
+      - player_nickname
+    MatchPlayerRequest:
+      type: object
+      properties:
+        match:
+          type: integer
+        player:
+          type: integer
+          nullable: true
+          description: NULL represents a BOT
+        club_season:
+          type: integer
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        is_starter:
+          type: boolean
+      required:
+      - club_season
+      - display_name
+      - match
+    MatchRequest:
+      type: object
+      properties:
+        season:
+          type: integer
+        division:
+          type: integer
+        matchday:
+          type: integer
+          nullable: true
+        home_club_season:
+          type: integer
+        away_club_season:
+          type: integer
+        home_goals:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        away_goals:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        date:
+          type: string
+          format: date
+          nullable: true
+        time:
+          type: string
+          format: time
+          nullable: true
+        status:
+          $ref: '#/components/schemas/Status25bEnum'
+      required:
+      - away_club_season
+      - division
+      - home_club_season
+      - season
+    Matchday:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        season:
+          type: integer
+        division:
+          type: integer
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        name:
+          type: string
+          maxLength: 100
+        date:
+          type: string
+          format: date
+          nullable: true
+        season_name:
+          type: string
+          readOnly: true
+        division_name:
+          type: string
+          readOnly: true
+      required:
+      - division
+      - division_name
+      - id
+      - name
+      - number
+      - season
+      - season_name
+    MatchdayRequest:
+      type: object
+      properties:
+        season:
+          type: integer
+        division:
+          type: integer
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        date:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - division
+      - name
+      - number
+      - season
+    NullEnum:
+      enum:
+      - null
+    PaginatedClubAdminList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClubAdmin'
+    PaginatedClubList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Club'
+    PaginatedClubTitleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClubTitle'
+    PaginatedCompetitionFormatList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompetitionFormat'
+    PaginatedCountryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Country'
+    PaginatedDivisionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Division'
+    PaginatedGameList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Game'
+    PaginatedLeagueAdminList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LeagueAdmin'
+    PaginatedLeagueList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/League'
+    PaginatedMatchEventList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatchEvent'
+    PaginatedMatchList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Match'
+    PaginatedMatchPerformanceList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatchPerformance'
+    PaginatedMatchPlayerList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatchPlayer'
+    PaginatedMatchdayList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Matchday'
+    PaginatedPlayerClubHistoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlayerClubHistory'
+    PaginatedPlayerIdentityHistoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlayerIdentityHistory'
+    PaginatedPlayerList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Player'
+    PaginatedSeasonListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SeasonList'
+    PaginatedStandingList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Standing'
+    PaginatedTransferList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transfer'
+    PaginatedUserList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+    PatchedClubAdminRequest:
+      type: object
+      properties:
+        user:
+          type: integer
+        club:
+          type: integer
+    PatchedClubRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        short_name:
+          type: string
+          minLength: 1
+          maxLength: 20
+        logo:
+          type: string
+          format: binary
+          nullable: true
+        country:
+          type: integer
+        founded_date:
+          type: string
+          format: date
+          nullable: true
+        is_active:
+          type: boolean
+    PatchedClubTitleRequest:
+      type: object
+      properties:
+        club:
+          type: integer
+        season:
+          type: integer
+        division:
+          type: integer
+          nullable: true
+        title_type:
+          $ref: '#/components/schemas/TitleTypeEnum'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        awarded_at:
+          type: string
+          format: date-time
+        notes:
+          type: string
+          nullable: true
+    PatchedCompetitionFormatRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        format_type:
+          $ref: '#/components/schemas/FormatTypeEnum'
+        has_playoffs:
+          type: boolean
+        description:
+          type: string
+          nullable: true
+    PatchedCountryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        code:
+          type: string
+          minLength: 1
+          description: ISO 3166-1 alpha-2
+          maxLength: 2
+        flag_url:
+          nullable: true
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+    PatchedDivisionRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        season:
+          type: integer
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Order within the season (1=first, 2=second, etc.)
+        max_clubs:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        playoff_zone_start:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        playoff_zone_end:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        promotion_zone_start:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        promotion_zone_end:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        relegation_zone_start:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        relegation_zone_end:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        has_relegation:
+          type: boolean
+    PatchedGameRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        year:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+    PatchedLeagueAdminRequest:
+      type: object
+      properties:
+        user:
+          type: integer
+        league:
+          type: integer
+    PatchedLeagueRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        country:
+          type: integer
+    PatchedMatchEventRequest:
+      type: object
+      properties:
+        match:
+          type: integer
+        match_player:
+          type: integer
+        event_type:
+          $ref: '#/components/schemas/EventTypeEnum'
+        minute:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+    PatchedMatchPerformanceRequest:
+      type: object
+      properties:
+        match_player:
+          type: integer
+        rating:
+          type: number
+          format: double
+          maximum: 10
+          minimum: 0
+        goals:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        assists:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        shots:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        shot_accuracy_pct:
+          type: integer
+          maximum: 100
+          minimum: 0
+        passes:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        pass_accuracy_pct:
+          type: integer
+          maximum: 100
+          minimum: 0
+        dribbles:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        dribble_success_pct:
+          type: integer
+          maximum: 100
+          minimum: 0
+        tackles:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        tackle_success_pct:
+          type: integer
+          maximum: 100
+          minimum: 0
+        offsides:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        fouls:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        possession_won:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        possession_lost:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        minutes_played:
+          type: integer
+          maximum: 130
+          minimum: 0
+        distance_km:
+          type: number
+          format: double
+          maximum: 999.9
+          minimum: 0
+          default: 0.0
+        sprint_distance_km:
+          type: number
+          format: double
+          maximum: 999.9
+          minimum: 0
+          default: 0.0
+    PatchedMatchPlayerRequest:
+      type: object
+      properties:
+        match:
+          type: integer
+        player:
+          type: integer
+          nullable: true
+          description: NULL represents a BOT
+        club_season:
+          type: integer
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        is_starter:
+          type: boolean
+    PatchedMatchRequest:
+      type: object
+      properties:
+        season:
+          type: integer
+        division:
+          type: integer
+        matchday:
+          type: integer
+          nullable: true
+        home_club_season:
+          type: integer
+        away_club_season:
+          type: integer
+        home_goals:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        away_goals:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        date:
+          type: string
+          format: date
+          nullable: true
+        time:
+          type: string
+          format: time
+          nullable: true
+        status:
+          $ref: '#/components/schemas/Status25bEnum'
+    PatchedMatchdayRequest:
+      type: object
+      properties:
+        season:
+          type: integer
+        division:
+          type: integer
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        date:
+          type: string
+          format: date
+          nullable: true
+    PatchedPlayerClubHistoryRequest:
+      type: object
+      properties:
+        player:
+          type: integer
+        club_season:
+          type: integer
+        joined_at:
+          type: string
+          format: date-time
+        left_at:
+          type: string
+          format: date-time
+          nullable: true
+    PatchedPlayerIdentityHistoryRequest:
+      type: object
+      properties:
+        nickname:
+          type: string
+          minLength: 1
+          maxLength: 50
+        changed_at:
+          type: string
+          format: date-time
+        changed_by:
+          type: integer
+          nullable: true
+        reason:
+          type: string
+          nullable: true
+          maxLength: 200
+    PatchedPlayerRequest:
+      type: object
+      properties:
+        nickname:
+          type: string
+          minLength: 1
+          maxLength: 50
+        platform:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/PlatformEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        position:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/PositionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        country:
+          type: integer
+          nullable: true
+        is_active:
+          type: boolean
+    PatchedSeasonRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        league:
+          type: integer
+        game:
+          type: integer
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        format:
+          type: integer
+        status:
+          $ref: '#/components/schemas/Status5bdEnum'
+    PatchedStandingRequest:
+      type: object
+      properties:
+        season:
+          type: integer
+        division:
+          type: integer
+        club_season:
+          type: integer
+        played:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        won:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        drawn:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        lost:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        goals_for:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        goals_against:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        goal_difference:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        points:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        position:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+    PatchedTransferRequest:
+      type: object
+      properties:
+        player:
+          type: integer
+        to_club_season:
+          type: integer
+        date:
+          type: string
+          format: date
+    PatchedUserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          title: Nombre de usuario
+          description: 'Requerido. 150 carácteres como máximo. Únicamente letras,
+            dígitos y @/./+/-/_ '
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        is_active:
+          type: boolean
+          title: Activo
+          description: Indica si el usuario debe ser tratado como activo. Desmarque
+            esta opción en lugar de borrar la cuenta.
+    PlatformEnum:
+      enum:
+      - PLAYSTATION
+      - XBOX
+      - PC
+      type: string
+      description: |-
+        * `PLAYSTATION` - PlayStation
+        * `XBOX` - Xbox
+        * `PC` - PC
+    Player:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nickname:
+          type: string
+          maxLength: 50
+        platform:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/PlatformEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        position:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/PositionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        country:
+          type: integer
+          nullable: true
+        country_name:
+          type: string
+          readOnly: true
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - country_name
+      - created_at
+      - id
+      - nickname
+      - updated_at
+    PlayerClubHistory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        player:
+          type: integer
+        club_season:
+          type: integer
+        joined_at:
+          type: string
+          format: date-time
+        left_at:
+          type: string
+          format: date-time
+          nullable: true
+        club_name:
+          type: string
+          readOnly: true
+        club:
+          type: integer
+          readOnly: true
+        player_nickname:
+          type: string
+          readOnly: true
+        season_name:
+          type: string
+          readOnly: true
+        division_name:
+          type: string
+          readOnly: true
+        game_name:
+          type: string
+          readOnly: true
+        is_current:
+          type: boolean
+          readOnly: true
+        stats:
+          type: string
+          readOnly: true
+      required:
+      - club
+      - club_name
+      - club_season
+      - division_name
+      - game_name
+      - id
+      - is_current
+      - joined_at
+      - player
+      - player_nickname
+      - season_name
+      - stats
+    PlayerClubHistoryRequest:
+      type: object
+      properties:
+        player:
+          type: integer
+        club_season:
+          type: integer
+        joined_at:
+          type: string
+          format: date-time
+        left_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - club_season
+      - joined_at
+      - player
+    PlayerDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nickname:
+          type: string
+          maxLength: 50
+        platform:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/PlatformEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        position:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/PositionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        country:
+          type: integer
+          nullable: true
+        country_name:
+          type: string
+          readOnly: true
+        is_active:
+          type: boolean
+        identity_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlayerIdentityHistory'
+          readOnly: true
+        club_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlayerClubHistory'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - club_history
+      - country_name
+      - created_at
+      - id
+      - identity_history
+      - nickname
+      - updated_at
+    PlayerIdentityHistory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nickname:
+          type: string
+          maxLength: 50
+        changed_at:
+          type: string
+          format: date-time
+        changed_by:
+          type: integer
+          nullable: true
+        changed_by_username:
+          type: string
+          readOnly: true
+        reason:
+          type: string
+          nullable: true
+          maxLength: 200
+      required:
+      - changed_at
+      - changed_by_username
+      - id
+      - nickname
+    PlayerIdentityHistoryRequest:
+      type: object
+      properties:
+        nickname:
+          type: string
+          minLength: 1
+          maxLength: 50
+        changed_at:
+          type: string
+          format: date-time
+        changed_by:
+          type: integer
+          nullable: true
+        reason:
+          type: string
+          nullable: true
+          maxLength: 200
+      required:
+      - changed_at
+      - nickname
+    PlayerRequest:
+      type: object
+      properties:
+        nickname:
+          type: string
+          minLength: 1
+          maxLength: 50
+        platform:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/PlatformEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        position:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/PositionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        country:
+          type: integer
+          nullable: true
+        is_active:
+          type: boolean
+      required:
+      - nickname
+    PositionEnum:
+      enum:
+      - ARQ
+      - DEF
+      - MED
+      - DEL
+      type: string
+      description: |-
+        * `ARQ` - Arquero
+        * `DEF` - Defensor
+        * `MED` - Mediocampista
+        * `DEL` - Delantero
+    RoleEnum:
+      enum:
+      - SUPERADMIN
+      - ADMIN_LIGA
+      - ADMIN_CLUB
+      - PLAYER
+      - USER
+      type: string
+      description: |-
+        * `SUPERADMIN` - Super Administrador
+        * `ADMIN_LIGA` - Administrador de Liga
+        * `ADMIN_CLUB` - Administrador de Club
+        * `PLAYER` - Jugador
+        * `USER` - Usuario
+    Season:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        league:
+          type: integer
+        game:
+          type: integer
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        format:
+          type: integer
+        status:
+          $ref: '#/components/schemas/Status5bdEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        league_name:
+          type: string
+          readOnly: true
+        game_name:
+          type: string
+          readOnly: true
+        format_name:
+          type: string
+          readOnly: true
+        divisions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Division'
+          readOnly: true
+      required:
+      - created_at
+      - divisions
+      - format
+      - format_name
+      - game
+      - game_name
+      - id
+      - league
+      - league_name
+      - name
+      - updated_at
+    SeasonList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        league:
+          type: integer
+        game:
+          type: integer
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        status:
+          $ref: '#/components/schemas/Status5bdEnum'
+        league_name:
+          type: string
+          readOnly: true
+        game_name:
+          type: string
+          readOnly: true
+      required:
+      - game
+      - game_name
+      - id
+      - league
+      - league_name
+      - name
+    SeasonRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        league:
+          type: integer
+        game:
+          type: integer
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        format:
+          type: integer
+        status:
+          $ref: '#/components/schemas/Status5bdEnum'
+      required:
+      - format
+      - game
+      - league
+      - name
+    Standing:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        season:
+          type: integer
+        division:
+          type: integer
+        club_season:
+          type: integer
+        played:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        won:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        drawn:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        lost:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        goals_for:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        goals_against:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        goal_difference:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        points:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        position:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        club_name:
+          type: string
+          readOnly: true
+        club:
+          type: integer
+          readOnly: true
+        season_name:
+          type: string
+          readOnly: true
+        division_name:
+          type: string
+          readOnly: true
+        zone:
+          type: string
+          readOnly: true
+      required:
+      - club
+      - club_name
+      - club_season
+      - division
+      - division_name
+      - id
+      - season
+      - season_name
+      - updated_at
+      - zone
+    StandingRequest:
+      type: object
+      properties:
+        season:
+          type: integer
+        division:
+          type: integer
+        club_season:
+          type: integer
+        played:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        won:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        drawn:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        lost:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        goals_for:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        goals_against:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        goal_difference:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        points:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        position:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+      required:
+      - club_season
+      - division
+      - season
+    Status25bEnum:
+      enum:
+      - SCHEDULED
+      - IN_PROGRESS
+      - FINISHED
+      - POSTPONED
+      - CANCELLED
+      type: string
+      description: |-
+        * `SCHEDULED` - Programado
+        * `IN_PROGRESS` - En Juego
+        * `FINISHED` - Finalizado
+        * `POSTPONED` - Aplazado
+        * `CANCELLED` - Cancelado
+    Status5bdEnum:
+      enum:
+      - UPCOMING
+      - ACTIVE
+      - FINISHED
+      type: string
+      description: |-
+        * `UPCOMING` - Próxima
+        * `ACTIVE` - Activa
+        * `FINISHED` - Finalizada
+    TitleTypeEnum:
+      enum:
+      - CHAMPION
+      - RUNNER_UP
+      - PLAYOFF_WINNER
+      - PROMOTION_WINNER
+      type: string
+      description: |-
+        * `CHAMPION` - Campeón
+        * `RUNNER_UP` - Subcampeón
+        * `PLAYOFF_WINNER` - Ganador del Reducido
+        * `PROMOTION_WINNER` - Ganador de Promoción
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    TopScorer:
+      type: object
+      properties:
+        player_id:
+          type: integer
+        nickname:
+          type: string
+        goals:
+          type: integer
+      required:
+      - goals
+      - nickname
+      - player_id
+    Transfer:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        player:
+          type: integer
+        from_club_season:
+          type: integer
+          readOnly: true
+          nullable: true
+        to_club_season:
+          type: integer
+        date:
+          type: string
+          format: date
+        registered_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        player_name:
+          type: string
+          readOnly: true
+        from_club_name:
+          type: string
+          readOnly: true
+        from_division_name:
+          type: string
+          readOnly: true
+        from_season_name:
+          type: string
+          readOnly: true
+        to_club_name:
+          type: string
+          readOnly: true
+        to_division_name:
+          type: string
+          readOnly: true
+        to_season_name:
+          type: string
+          readOnly: true
+        registered_by_username:
+          type: string
+          readOnly: true
+        from_club:
+          type: string
+          readOnly: true
+        to_club:
+          type: string
+          readOnly: true
+      required:
+      - created_at
+      - from_club
+      - from_club_name
+      - from_club_season
+      - from_division_name
+      - from_season_name
+      - id
+      - player
+      - player_name
+      - registered_by
+      - registered_by_username
+      - to_club
+      - to_club_name
+      - to_club_season
+      - to_division_name
+      - to_season_name
+    TransferRequest:
+      type: object
+      properties:
+        player:
+          type: integer
+        to_club_season:
+          type: integer
+        date:
+          type: string
+          format: date
+      required:
+      - player
+      - to_club_season
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          title: Nombre de usuario
+          description: 'Requerido. 150 carácteres como máximo. Únicamente letras,
+            dígitos y @/./+/-/_ '
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        is_active:
+          type: boolean
+          title: Activo
+          description: Indica si el usuario debe ser tratado como activo. Desmarque
+            esta opción en lugar de borrar la cuenta.
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - email
+      - id
+      - username
+    UserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          title: Nombre de usuario
+          description: 'Requerido. 150 carácteres como máximo. Únicamente letras,
+            dígitos y @/./+/-/_ '
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        is_active:
+          type: boolean
+          title: Activo
+          description: Indica si el usuario debe ser tratado como activo. Desmarque
+            esta opción en lugar de borrar la cuenta.
+      required:
+      - email
+      - username
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+tags:
+- name: Auth
+  description: Login, registro, perfil y refresh de token
+- name: Users
+  description: Gestion de usuarios (SUPERADMIN)
+- name: Countries
+  description: Paises
+- name: Games
+  description: Ediciones del juego
+- name: Leagues
+  description: Ligas dentro de un pais
+- name: Seasons
+  description: Temporadas dentro de una liga
+- name: Divisions
+  description: Divisiones dentro de una temporada
+- name: Clubs
+  description: Clubes y participaciones por temporada
+- name: Players
+  description: Jugadores e historial de identidad/clubes
+- name: Matches
+  description: Partidos, alineaciones y eventos
+- name: Standings
+  description: Tabla de posiciones y recalculo
+- name: Statistics
+  description: Estadisticas derivadas, rankings y goleadores

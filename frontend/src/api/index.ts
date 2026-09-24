@@ -8,6 +8,7 @@ import type {
   MatchAnalyzeResponse,
   Standing, PaginatedResponse,
   TopScorer, TopAssist, TopMVP, User, Transfer,
+  PerformanceLeaderboardEntry, PositionPerfRow, PlayerMatchSeriesPoint,
 } from "../types";
 
 // Auth
@@ -210,4 +211,15 @@ export const statisticsApi = {
     api.get<TopAssist[]>("/statistics/top_assists/", { params }),
   topMvp: (params?: { season_id?: number; division_id?: number; limit?: number }) =>
     api.get<TopMVP[]>("/statistics/top_mvp/", { params }),
+  performanceLeaderboard: (params?: {
+    metric?: string; agg?: "avg" | "sum";
+    season_id?: number; division_id?: number;
+    limit?: number; min_matches?: number;
+  }) => api.get<PerformanceLeaderboardEntry[]>("/statistics/performance_leaderboard/", { params }),
+  performanceByPosition: (params?: { season_id?: number; division_id?: number }) =>
+    api.get<PositionPerfRow[]>("/statistics/performance_by_position/", { params }),
+  playerMatchSeries: (playerId: number) =>
+    api.get<PlayerMatchSeriesPoint[]>("/statistics/player_match_series/", {
+      params: { player_id: playerId },
+    }),
 };

@@ -1,12 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { playersApi, statisticsApi, countriesApi, matchPerformancesApi } from "../api";
-import type { PlayerDetail, Player, Country, MatchPerformance } from "../types";
+import type {
+  PlayerDetail, Player, Country, MatchPerformance, PlayerMatchSeriesPoint,
+} from "../types";
 import { PERF_FIELDS } from "../lib/performance";
 import Loading from "../components/ui/Loading";
 import ErrorMessage from "../components/ui/ErrorMessage";
 import Breadcrumb from "../components/ui/Breadcrumb";
 import CountryFlag from "../components/ui/CountryFlag";
+import Sparkline from "../components/charts/Sparkline";
+import RatingEvolutionChart from "../components/charts/RatingEvolutionChart";
 import { useCanEdit } from "../hooks/useCanEdit";
 
 function apiErrorMessage(err: unknown): string {
@@ -76,6 +80,7 @@ export default function PlayerProfile() {
   const [notice, setNotice] = useState<string | null>(null);
   const [performances, setPerformances] = useState<MatchPerformance[]>([]);
   const [perfExpanded, setPerfExpanded] = useState<number | null>(null);
+  const [series, setSeries] = useState<PlayerMatchSeriesPoint[]>([]);
   const [draft, setDraft] = useState({
     nickname: "",
     position: "" as Player["position"] | "",
@@ -99,11 +104,15 @@ export default function PlayerProfile() {
       statisticsApi.player(Number(id)).catch(() => ({ data: {} })),
       statisticsApi.playerHistory(Number(id)).catch(() => ({ data: { history: [] } })),
       matchPerformancesApi.forPlayer(Number(id), { page_size: 100 }).catch(() => ({ data: { results: [] } })),
+      statisticsApi.playerMatchSeries(Number(id)).catch(() => ({ data: [] })),
     ])
-      .then(([playerRes, statsRes, historyRes, perfRes]) => {
+      .then(([playerRes, statsRes, historyRes, perfRes, seriesRes]) => {
         if (controller.signal.aborted) return;
         setPlayer(playerRes.data);
         setPerformances(perfRes.data?.results || []);
+        setSeries(
+          (seriesRes.data as PlayerMatchSeriesPoint[] | undefined) || []
+        );
         const raw = statsRes.data?.stats || statsRes.data || {};
         const historySeasons = historyRes.data?.history || [];
         const matchesPlayed = historySeasons.length || raw.matches_played || 0;
@@ -184,6 +193,13 @@ export default function PlayerProfile() {
     const tb = new Date(b.joined_at).getTime();
     return ta - tb;
   });
+  const evoPoints = series.filter((s) => s.rating != null);
+  const seriesGoals = series.map((s) => s.goals);
+  const seriesAssists = series.map((s) => s.assists);
+  const seriesMvp = series.map((s) => s.mvp);
+  const seriesYellow = series.map((s) => s.yellow);
+  const seriesRed = series.map((s) => s.red);
+  const hasSpark = series.length >= 2;
 
   return (
     <div>
@@ -342,14 +358,17 @@ export default function PlayerProfile() {
           <div className="stat-card">
             <span className="stat-value accent">{stats.goals || 0}</span>
             <span className="stat-label">Goles</span>
+            {hasSpark && <Sparkline values={seriesGoals} color="var(--accent)" />}
           </div>
           <div className="stat-card">
             <span className="stat-value green">{stats.assists || 0}</span>
             <span className="stat-label">Asistencias</span>
+            {hasSpark && <Sparkline values={seriesAssists} color="var(--green)" />}
           </div>
           <div className="stat-card">
             <span className="stat-value gold">{stats.mvp_count || 0}</span>
             <span className="stat-label">MVP</span>
+            {hasSpark && <Sparkline values={seriesMvp} color="var(--gold)" />}
           </div>
           <div className="stat-card">
             <span className="stat-value">{stats.matches_played || 0}</span>
@@ -358,13 +377,24 @@ export default function PlayerProfile() {
           <div className="stat-card">
             <span className="stat-value gold">{stats.yellow_cards || 0}</span>
             <span className="stat-label">Amarillas</span>
+            {hasSpark && <Sparkline values={seriesYellow} color="var(--amber)" />}
           </div>
           <div className="stat-card">
             <span className="stat-value red">{stats.red_cards || 0}</span>
             <span className="stat-label">Rojas</span>
+            {hasSpark && <Sparkline values={seriesRed} color="var(--red)" />}
           </div>
         </div>
       </div>
+
+      {evoPoints.length >= 2 && (
+        <div className="profile-section">
+          <h2>Evolución de rendimiento</h2>
+          <div className="chart-card" style={{ marginBottom: 0 }}>
+            <RatingEvolutionChart points={evoPoints} />
+          </div>
+        </div>
+      )}
 
       {performances.length > 0 && (
         <div className="profile-section">
