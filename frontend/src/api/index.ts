@@ -4,6 +4,7 @@ import type {
   Club, ClubDetail, ClubSeason, ClubTitle,
   Player, PlayerDetail, PlayerClubHistory,
   Match, MatchDetail, MatchPlayer, MatchEvent,
+  MatchPerformance, MatchPerformancePayload,
   Standing, PaginatedResponse,
   TopScorer, TopAssist, TopMVP, User, Transfer,
 } from "../types";
@@ -149,6 +150,19 @@ export const matchEventsApi = {
   update: (id: number, data: Partial<MatchEvent>) =>
     api.patch<MatchEvent>(`/match-events/${id}/`, data),
   delete: (id: number) => api.delete(`/match-events/${id}/`),
+};
+
+// Match Performances (rendimiento detallado por partido)
+export const matchPerformancesApi = {
+  list: (params?: { match?: number; match_player?: number; page_size?: number }) =>
+    api.get<PaginatedResponse<MatchPerformance>>("/match-performances/", { params }),
+  saveBatch: (matchId: number, items: MatchPerformancePayload[]) =>
+    api.post<MatchPerformance[]>(`/matches/${matchId}/performances/batch/`, items),
+  forPlayer: (playerId: number, params?: { season?: number; division?: number; page_size?: number }) =>
+    api.get<PaginatedResponse<MatchPerformance>>(`/players/${playerId}/performances/`, { params }),
+  update: (id: number, data: Partial<MatchPerformancePayload>) =>
+    api.patch<MatchPerformance>(`/match-performances/${id}/`, data),
+  delete: (id: number) => api.delete(`/match-performances/${id}/`),
 };
 
 // Standings

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
-import { playersApi, statisticsApi, countriesApi } from "../api";
-import type { PlayerDetail, Player, Country } from "../types";
+import { playersApi, statisticsApi, countriesApi, matchPerformancesApi } from "../api";
+import type { PlayerDetail, Player, Country, MatchPerformance } from "../types";
+import { PERF_FIELDS } from "../lib/performance";
 import Loading from "../components/ui/Loading";
 import ErrorMessage from "../components/ui/ErrorMessage";
 import Breadcrumb from "../components/ui/Breadcrumb";
@@ -73,6 +74,8 @@ export default function PlayerProfile() {
   const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [performances, setPerformances] = useState<MatchPerformance[]>([]);
+  const [perfExpanded, setPerfExpanded] = useState<number | null>(null);
   const [draft, setDraft] = useState({
     nickname: "",
     position: "" as Player["position"] | "",
@@ -95,10 +98,12 @@ export default function PlayerProfile() {
       playersApi.get(Number(id)),
       statisticsApi.player(Number(id)).catch(() => ({ data: {} })),
       statisticsApi.playerHistory(Number(id)).catch(() => ({ data: { history: [] } })),
+      matchPerformancesApi.forPlayer(Number(id), { page_size: 100 }).catch(() => ({ data: { results: [] } })),
     ])
-      .then(([playerRes, statsRes, historyRes]) => {
+      .then(([playerRes, statsRes, historyRes, perfRes]) => {
         if (controller.signal.aborted) return;
         setPlayer(playerRes.data);
+        setPerformances(perfRes.data?.results || []);
         const raw = statsRes.data?.stats || statsRes.data || {};
         const historySeasons = historyRes.data?.history || [];
         const matchesPlayed = historySeasons.length || raw.matches_played || 0;
@@ -360,6 +365,80 @@ export default function PlayerProfile() {
           </div>
         </div>
       </div>
+
+      {performances.length > 0 && (
+        <div className="profile-section">
+          <h2>Partidos y rendimiento</h2>
+          <div className="history-list">
+            {performances.map((pf) => (
+              <div key={pf.id} className="history-item" style={{ flexDirection: "column", alignItems: "stretch" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "var(--space-3)",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => setPerfExpanded(perfExpanded === pf.id ? null : pf.id)}
+                >
+                  <span className="history-club">
+                    <Link
+                      to={`/matches/${pf.match}`}
+                      style={{ color: "inherit" }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {pf.home_club_name} {pf.home_goals ?? "-"} - {pf.away_goals ?? "-"} {pf.away_club_name}
+                    </Link>
+                  </span>
+                  <span className="history-context">
+                    {pf.match_date
+                      ? new Date(`${pf.match_date}T00:00:00`).toLocaleDateString("es-AR")
+                      : ""}
+                    {" · "}
+                    {pf.club_name}
+                  </span>
+                  <div className="history-chips">
+                    <span className="stat-chip">
+                      <span className="stat-chip-label">Rating</span>
+                      <span className="stat-chip-value">{pf.rating}</span>
+                    </span>
+                    <span className="stat-chip stat-chip-green">
+                      <span className="stat-chip-label">G</span>
+                      <span className="stat-chip-value">{pf.goals}</span>
+                    </span>
+                    <span className="stat-chip stat-chip-green">
+                      <span className="stat-chip-label">A</span>
+                      <span className="stat-chip-value">{pf.assists}</span>
+                    </span>
+                    <span className="stat-chip">
+                      <span className="stat-chip-label">Min</span>
+                      <span className="stat-chip-value">{pf.minutes_played}</span>
+                    </span>
+                    <span className="stat-chip">
+                      <span className="stat-chip-label">Km</span>
+                      <span className="stat-chip-value">{pf.distance_km}</span>
+                    </span>
+                  </div>
+                </div>
+                {perfExpanded === pf.id && (
+                  <div className="history-chips" style={{ marginTop: "var(--space-3)" }}>
+                    {PERF_FIELDS.map((field) => (
+                      <span key={field.key} className="stat-chip">
+                        <span className="stat-chip-label">{field.label}</span>
+                        <span className="stat-chip-value">
+                          {(pf as unknown as Record<string, number>)[field.key] ?? 0}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {historyStints.length > 0 && (
         <div className="profile-section">

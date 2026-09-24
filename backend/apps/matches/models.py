@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class Matchday(models.Model):
@@ -192,3 +193,70 @@ class MatchEvent(models.Model):
             raise ValidationError(
                 "El jugador no pertenece a este partido."
             )
+
+
+class MatchPerformance(models.Model):
+    """Detailed per-player match statistics (analytics only; MatchEvent remains
+    the authority for competition standings and rankings)."""
+
+    match_player = models.OneToOneField(
+        MatchPlayer,
+        on_delete=models.CASCADE,
+        related_name="performance",
+    )
+    rating = models.DecimalField(
+        max_digits=3,
+        decimal_places=1,
+        validators=[MinValueValidator(0), MaxValueValidator(10)],
+    )
+    goals = models.PositiveSmallIntegerField(default=0)
+    assists = models.PositiveSmallIntegerField(default=0)
+    shots = models.PositiveSmallIntegerField(default=0)
+    shot_accuracy_pct = models.PositiveSmallIntegerField(
+        default=0, validators=[MaxValueValidator(100)]
+    )
+    passes = models.PositiveSmallIntegerField(default=0)
+    pass_accuracy_pct = models.PositiveSmallIntegerField(
+        default=0, validators=[MaxValueValidator(100)]
+    )
+    dribbles = models.PositiveSmallIntegerField(default=0)
+    dribble_success_pct = models.PositiveSmallIntegerField(
+        default=0, validators=[MaxValueValidator(100)]
+    )
+    tackles = models.PositiveSmallIntegerField(default=0)
+    tackle_success_pct = models.PositiveSmallIntegerField(
+        default=0, validators=[MaxValueValidator(100)]
+    )
+    offsides = models.PositiveSmallIntegerField(default=0)
+    fouls = models.PositiveSmallIntegerField(default=0)
+    possession_won = models.PositiveSmallIntegerField(default=0)
+    possession_lost = models.PositiveSmallIntegerField(default=0)
+    minutes_played = models.PositiveSmallIntegerField(
+        default=0, validators=[MaxValueValidator(130)]
+    )
+    distance_km = models.DecimalField(
+        max_digits=4,
+        decimal_places=1,
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(999.9)],
+    )
+    sprint_distance_km = models.DecimalField(
+        max_digits=4,
+        decimal_places=1,
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(999.9)],
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Rendimiento del Partido"
+        verbose_name_plural = "Rendimientos de Partidos"
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"{self.match_player.display_name} - rating {self.rating}"
+
+    def clean(self):
+        if self.match_player_id and self.match_player.player_id is None:
+            raise ValidationError("Los BOT no tienen rendimiento.")

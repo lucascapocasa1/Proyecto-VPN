@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Matchday, Match, MatchPlayer, MatchEvent
+from django.core.validators import MinValueValidator, MaxValueValidator
+from .models import Matchday, Match, MatchPlayer, MatchEvent, MatchPerformance
 
 
 class MatchdaySerializer(serializers.ModelSerializer):
@@ -111,3 +112,75 @@ class MatchDetailSerializer(serializers.ModelSerializer):
             "match_players", "events",
             "created_at", "updated_at",
         ]
+
+
+class MatchPerformanceSerializer(serializers.ModelSerializer):
+    match = serializers.IntegerField(source="match_player.match_id", read_only=True)
+    player = serializers.IntegerField(
+        source="match_player.player_id", read_only=True, default=None
+    )
+    player_nickname = serializers.CharField(
+        source="match_player.player.nickname", read_only=True, default=None
+    )
+    display_name = serializers.CharField(
+        source="match_player.display_name", read_only=True
+    )
+    club_name = serializers.CharField(
+        source="match_player.club_season.club.name", read_only=True
+    )
+    match_date = serializers.DateField(
+        source="match_player.match.date", read_only=True, default=None
+    )
+    home_club_name = serializers.CharField(
+        source="match_player.match.home_club_season.club.name", read_only=True
+    )
+    away_club_name = serializers.CharField(
+        source="match_player.match.away_club_season.club.name", read_only=True
+    )
+    home_goals = serializers.IntegerField(
+        source="match_player.match.home_goals", read_only=True, default=None
+    )
+    away_goals = serializers.IntegerField(
+        source="match_player.match.away_goals", read_only=True, default=None
+    )
+    rival_name = serializers.SerializerMethodField()
+
+    rating = serializers.DecimalField(
+        max_digits=3, decimal_places=1, coerce_to_string=False,
+        validators=[MinValueValidator(0), MaxValueValidator(10)],
+    )
+    distance_km = serializers.DecimalField(
+        max_digits=4, decimal_places=1, coerce_to_string=False, default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(999.9)],
+    )
+    sprint_distance_km = serializers.DecimalField(
+        max_digits=4, decimal_places=1, coerce_to_string=False, default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(999.9)],
+    )
+
+    class Meta:
+        model = MatchPerformance
+        fields = [
+            "id", "match_player", "match", "player", "player_nickname",
+            "display_name", "club_name", "match_date",
+            "home_club_name", "away_club_name", "home_goals", "away_goals",
+            "rival_name",
+            "rating", "goals", "assists", "shots", "shot_accuracy_pct",
+            "passes", "pass_accuracy_pct", "dribbles", "dribble_success_pct",
+            "tackles", "tackle_success_pct", "offsides", "fouls",
+            "possession_won", "possession_lost", "minutes_played",
+            "distance_km", "sprint_distance_km",
+            "created_at", "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def get_rival_name(self, obj):
+        match = obj.match_player.match
+        if obj.match_player.club_season_id == match.home_club_season_id:
+            return match.away_club_season.club.name
+        return match.home_club_season.club.name
+
+    def validate_match_player(self, value):
+        if value.player_id is None:
+            raise serializers.ValidationError("Los BOT no tienen rendimiento.")
+        return value

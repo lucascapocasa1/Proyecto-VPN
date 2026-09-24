@@ -1,12 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
 import {
   matchesApi,
   matchEventsApi,
   matchPlayersApi,
   playerClubHistoryApi,
+  matchPerformancesApi,
 } from "../api";
-import type { Match, MatchDetail, MatchEvent, PlayerClubHistory } from "../types";
+import type { Match, MatchDetail, MatchEvent, MatchPerformance, PlayerClubHistory } from "../types";
+import { PERF_FIELDS, PERF_SUMMARY_KEYS, toNum } from "../lib/performance";
 import Loading from "../components/ui/Loading";
 import ErrorMessage from "../components/ui/ErrorMessage";
 import Breadcrumb from "../components/ui/Breadcrumb";
@@ -58,6 +60,31 @@ interface EditState {
   time: string;
 }
 
+interface PerfRow {
+  player: number;
+  nickname: string;
+  clubName: string;
+  isHome: boolean;
+  performance: MatchPerformance | null;
+}
+
+const PERF_FIELD_LABELS: Record<string, string> = Object.fromEntries(
+  PERF_FIELDS.map((f) => [f.key, f.label])
+);
+
+function initialPerfDraft(pf: MatchPerformance | null): Record<string, string> {
+  const draft: Record<string, string> = {};
+  for (const field of PERF_FIELDS) {
+    const raw = pf ? (pf as unknown as Record<string, number>)[field.key] : undefined;
+    if (raw !== undefined && raw !== null) {
+      draft[field.key] = String(raw);
+    } else {
+      draft[field.key] = field.required ? "" : "0";
+    }
+  }
+  return draft;
+}
+
 export default function MatchDetailPage() {
   const { id } = useParams<{ id: string }>();
   const canEdit = useCanEdit();
@@ -86,6 +113,11 @@ export default function MatchDetailPage() {
     minute: "",
   });
   const [lineupForm, setLineupForm] = useState({ pch: "", starter: false });
+  const [performances, setPerformances] = useState<MatchPerformance[]>([]);
+  const [perfExpanded, setPerfExpanded] = useState<number | null>(null);
+  const [perfDraft, setPerfDraft] = useState<Record<string, string>>({});
+  const [perfSaving, setPerfSaving] = useState(false);
+  const [perfError, setPerfError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const fetchMatch = useCallback(() => {
@@ -123,6 +155,18 @@ export default function MatchDetailPage() {
     fetchMatch();
     return () => abortRef.current?.abort();
   }, [fetchMatch]);
+
+  const fetchPerformances = useCallback(() => {
+    if (!id) return;
+    matchPerformancesApi
+      .list({ match: Number(id), page_size: 100 })
+      .then((res) => setPerformances(res.data.results || []))
+      .catch(() => setPerformances([]));
+  }, [id]);
+
+  useEffect(() => {
+    fetchPerformances();
+  }, [fetchPerformances]);
 
   useEffect(() => {
     if (!canEdit || !match) {
@@ -249,6 +293,80 @@ export default function MatchDetailPage() {
       fetchMatch();
     } catch (err) {
       setFormError(apiErrorMessage(err));
+    }
+  };
+
+  const perfRows = useMemo<PerfRow[]>(() => {
+    if (!match) return [];
+    const byPlayer = new Map<number, PerfRow>();
+    for (const mp of match.match_players) {
+      if (mp.player == null) continue;
+      byPlayer.set(mp.player, {
+        player: mp.player,
+        nickname: mp.player_nickname || mp.display_name,
+        clubName: mp.club_name,
+        isHome: mp.club_season === match.home_club_season,
+        performance: null,
+      });
+    }
+    for (const pch of roster) {
+      if (byPlayer.has(pch.player)) continue;
+      byPlayer.set(pch.player, {
+        player: pch.player,
+        nickname: pch.player_nickname,
+        clubName: pch.club_name,
+        isHome: pch.club_season === match.home_club_season,
+        performance: null,
+      });
+    }
+    for (const pf of performances) {
+      if (pf.player == null) continue;
+      const existing = byPlayer.get(pf.player);
+      if (existing) {
+        existing.performance = pf;
+      } else {
+        byPlayer.set(pf.player, {
+          player: pf.player,
+          nickname: pf.player_nickname || pf.display_name,
+          clubName: pf.club_name,
+          isHome: pf.club_name === match.home_club_name,
+          performance: pf,
+        });
+      }
+    }
+    return Array.from(byPlayer.values());
+  }, [match, roster, performances]);
+
+  const openPerfEdit = (row: PerfRow) => {
+    setPerfDraft(initialPerfDraft(row.performance));
+    setPerfExpanded(row.player);
+    setPerfError(null);
+  };
+
+  const savePerfRow = async (row: PerfRow) => {
+    if (!match) return;
+    if (perfDraft.rating == null || perfDraft.rating.trim() === "") {
+      setPerfError("El rating es obligatorio");
+      return;
+    }
+    setPerfSaving(true);
+    setPerfError(null);
+    try {
+      const item: Record<string, number | string> = { player: row.player };
+      for (const field of PERF_FIELDS) {
+        item[field.key] = toNum(perfDraft[field.key] ?? "0");
+      }
+      await matchPerformancesApi.saveBatch(match.id, [
+        item as unknown as Parameters<typeof matchPerformancesApi.saveBatch>[1][number],
+      ]);
+      setNotice(`Rendimiento de ${row.nickname} guardado`);
+      setPerfExpanded(null);
+      fetchPerformances();
+      fetchMatch();
+    } catch (err) {
+      setPerfError(apiErrorMessage(err));
+    } finally {
+      setPerfSaving(false);
     }
   };
 
@@ -632,6 +750,143 @@ export default function MatchDetailPage() {
             </div>
           )}
         </div>
+      </div>
+
+      <div className="profile-section">
+        <h2>Rendimiento detallado</h2>
+
+        {!canEdit ? (
+          performances.length === 0 ? (
+            <p className="empty">Sin datos de rendimiento</p>
+          ) : (
+            <div className="history-list">
+              {performances.map((pf) => (
+                <div key={pf.id} className="history-item" style={{ flexWrap: "wrap", gap: "var(--space-3)" }}>
+                  <span className="event-player">
+                    {pf.player_nickname || pf.display_name}
+                    <span className="event-club" style={{ marginLeft: "var(--space-2)" }}>
+                      {pf.club_name}
+                    </span>
+                  </span>
+                  <div className="history-chips">
+                    {PERF_SUMMARY_KEYS.map((key) => (
+                      <span key={key} className="stat-chip">
+                        <span className="stat-chip-label">{PERF_FIELD_LABELS[key]}</span>
+                        <span className="stat-chip-value">
+                          {(pf as unknown as Record<string, number>)[key] ?? 0}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        ) : perfRows.length === 0 ? (
+          <p className="empty">Sin jugadores para cargar rendimiento</p>
+        ) : (
+          <>
+            <p className="empty" style={{ marginBottom: "var(--space-3)", textAlign: "left" }}>
+              Cargá las stats de cada jugador. El rating es obligatorio; el resto admite 0.
+            </p>
+            {[
+              { label: match.home_club_name, rows: perfRows.filter((r) => r.isHome) },
+              { label: match.away_club_name, rows: perfRows.filter((r) => !r.isHome) },
+            ].map((group) =>
+              group.rows.length > 0 ? (
+                <div key={group.label}>
+                  <h3 className="lineup-club">{group.label}</h3>
+                  <div className="history-list" style={{ marginBottom: "var(--space-4)" }}>
+                    {group.rows.map((row) =>
+                      perfExpanded === row.player ? (
+                        <div
+                          key={row.player}
+                          className="history-item"
+                          style={{ flexDirection: "column", alignItems: "stretch" }}
+                        >
+                          <div
+                            className="transfer-form"
+                            style={{ gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))" }}
+                          >
+                            {PERF_FIELDS.map((field) => (
+                              <div key={field.key} className="form-group">
+                                <label>
+                                  {field.label}
+                                  {field.required ? " *" : ""}
+                                </label>
+                                <input
+                                  type="number"
+                                  min={field.min ?? 0}
+                                  max={field.max}
+                                  step={field.step}
+                                  value={perfDraft[field.key] ?? ""}
+                                  onChange={(e) =>
+                                    setPerfDraft({ ...perfDraft, [field.key]: e.target.value })
+                                  }
+                                />
+                              </div>
+                            ))}
+                            <div className="form-group">
+                              <label>&nbsp;</label>
+                              <div style={{ display: "flex", gap: "var(--space-2)" }}>
+                                <button
+                                  type="button"
+                                  className="btn btn-primary"
+                                  onClick={() => savePerfRow(row)}
+                                  disabled={perfSaving}
+                                >
+                                  {perfSaving ? "Guardando..." : "Guardar"}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-ghost"
+                                  onClick={() => setPerfExpanded(null)}
+                                  disabled={perfSaving}
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          {perfError && (
+                            <p className="error-msg" style={{ textAlign: "left" }}>
+                              {perfError}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <div key={row.player} className="history-item" style={{ flexWrap: "wrap", gap: "var(--space-3)" }}>
+                          <span className="event-player">{row.nickname}</span>
+                          {row.performance ? (
+                            <div className="history-chips">
+                              {PERF_SUMMARY_KEYS.map((key) => (
+                                <span key={key} className="stat-chip">
+                                  <span className="stat-chip-label">{PERF_FIELD_LABELS[key]}</span>
+                                  <span className="stat-chip-value">
+                                    {(row.performance as unknown as Record<string, number>)[key] ?? 0}
+                                  </span>
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="badge badge-muted">Sin datos</span>
+                          )}
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-ghost"
+                            onClick={() => openPerfEdit(row)}
+                          >
+                            {row.performance ? "Editar" : "Cargar"}
+                          </button>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              ) : null
+            )}
+          </>
+        )}
       </div>
     </div>
   );

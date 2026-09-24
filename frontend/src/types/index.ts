@@ -226,6 +226,64 @@ export interface MatchEvent {
   created_at: string;
 }
 
+export interface MatchPerformance {
+  id: number;
+  match_player: number;
+  match: number;
+  player: number | null;
+  player_nickname: string | null;
+  display_name: string;
+  club_name: string;
+  match_date: string | null;
+  home_club_name: string;
+  away_club_name: string;
+  home_goals: number | null;
+  away_goals: number | null;
+  rival_name: string;
+  rating: number;
+  goals: number;
+  assists: number;
+  shots: number;
+  shot_accuracy_pct: number;
+  passes: number;
+  pass_accuracy_pct: number;
+  dribbles: number;
+  dribble_success_pct: number;
+  tackles: number;
+  tackle_success_pct: number;
+  offsides: number;
+  fouls: number;
+  possession_won: number;
+  possession_lost: number;
+  minutes_played: number;
+  distance_km: number;
+  sprint_distance_km: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MatchPerformancePayload {
+  player: number;
+  rating: number;
+  goals?: number;
+  assists?: number;
+  shots?: number;
+  shot_accuracy_pct?: number;
+  passes?: number;
+  pass_accuracy_pct?: number;
+  dribbles?: number;
+  dribble_success_pct?: number;
+  tackles?: number;
+  tackle_success_pct?: number;
+  offsides?: number;
+  fouls?: number;
+  possession_won?: number;
+  possession_lost?: number;
+  minutes_played?: number;
+  distance_km?: number;
+  sprint_distance_km?: number;
+}
+
 export interface Standing {
   id: number;
   season: number;

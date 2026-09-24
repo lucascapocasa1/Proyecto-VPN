@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Matchday, Match, MatchPlayer, MatchEvent
+from .models import Matchday, Match, MatchPlayer, MatchEvent, MatchPerformance
 
 
 @admin.register(Matchday)
@@ -48,3 +48,14 @@ class MatchEventAdmin(admin.ModelAdmin):
     list_filter = ["event_type", "match__status"]
     search_fields = ["match_player__display_name"]
     raw_id_fields = ["match", "match_player"]
+
+
+@admin.register(MatchPerformance)
+class MatchPerformanceAdmin(admin.ModelAdmin):
+    list_display = [
+        "match_player", "rating", "goals", "assists",
+        "minutes_played", "distance_km",
+    ]
+    list_filter = ["match_player__match__status"]
+    search_fields = ["match_player__display_name", "match_player__player__nickname"]
+    raw_id_fields = ["match_player"]
