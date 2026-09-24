@@ -1,4 +1,5 @@
 from rest_framework import viewsets, permissions, filters, status
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
@@ -19,7 +20,7 @@ class PlayerViewSet(viewsets.ModelViewSet):
     tags = ["Players"]
 
     def get_permissions(self):
-        if self.action in ["list", "retrieve"]:
+        if self.action in ["list", "retrieve", "performances"]:
             return [permissions.AllowAny()]
         return [IsAdminLiga()]
 
@@ -27,6 +28,44 @@ class PlayerViewSet(viewsets.ModelViewSet):
         if self.action == "retrieve":
             return PlayerDetailSerializer
         return PlayerSerializer
+
+    @action(detail=True, methods=["get"])
+    def performances(self, request, pk=None):
+        from apps.matches.models import MatchPerformance
+        from apps.matches.serializers import MatchPerformanceSerializer
+
+        player = self.get_object()
+        queryset = MatchPerformance.objects.filter(
+            match_player__player=player
+        ).select_related(
+            "match_player__player",
+            "match_player__club_season__club",
+            "match_player__match__home_club_season__club",
+            "match_player__match__away_club_season__club",
+        )
+
+        season = request.query_params.get("season")
+        if season:
+            queryset = queryset.filter(match_player__match__season_id=season)
+        division = request.query_params.get("division")
+        if division:
+            queryset = queryset.filter(match_player__match__division_id=division)
+
+        queryset = queryset.order_by(
+            "-match_player__match__date", "-match_player__match__time", "-id"
+        )
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = MatchPerformanceSerializer(
+                page, many=True, context={"request": request}
+            )
+            return self.get_paginated_response(serializer.data)
+
+        serializer = MatchPerformanceSerializer(
+            queryset, many=True, context={"request": request}
+        )
+        return Response(serializer.data)
 
 
 class PlayerIdentityHistoryViewSet(viewsets.ModelViewSet):

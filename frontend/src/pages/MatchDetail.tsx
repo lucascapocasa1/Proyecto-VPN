@@ -7,7 +7,10 @@ import {
   playerClubHistoryApi,
   matchPerformancesApi,
 } from "../api";
-import type { Match, MatchDetail, MatchEvent, MatchPerformance, PlayerClubHistory } from "../types";
+import type {
+  Match, MatchDetail, MatchEvent, MatchPerformance, MatchAnalyzeResult,
+  PlayerClubHistory,
+} from "../types";
 import { PERF_FIELDS, PERF_SUMMARY_KEYS, toNum } from "../lib/performance";
 import Loading from "../components/ui/Loading";
 import ErrorMessage from "../components/ui/ErrorMessage";
@@ -118,6 +121,11 @@ export default function MatchDetailPage() {
   const [perfDraft, setPerfDraft] = useState<Record<string, string>>({});
   const [perfSaving, setPerfSaving] = useState(false);
   const [perfError, setPerfError] = useState<string | null>(null);
+  const [ocrFiles, setOcrFiles] = useState<File[]>([]);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrError, setOcrError] = useState<string | null>(null);
+  const [ocrResults, setOcrResults] = useState<MatchAnalyzeResult[]>([]);
+  const [ocrAssign, setOcrAssign] = useState<Record<number, number | "">>({});
   const abortRef = useRef<AbortController | null>(null);
 
   const fetchMatch = useCallback(() => {
@@ -365,6 +373,90 @@ export default function MatchDetailPage() {
       fetchMatch();
     } catch (err) {
       setPerfError(apiErrorMessage(err));
+    } finally {
+      setPerfSaving(false);
+    }
+  };
+
+  const runOcr = async () => {
+    if (!match || ocrFiles.length === 0) return;
+    setOcrLoading(true);
+    setOcrError(null);
+    setOcrResults([]);
+    setOcrAssign({});
+    try {
+      const res = await matchPerformancesApi.analyze(match.id, ocrFiles);
+      setOcrResults(res.data.results);
+      if (res.data.fallidos > 0) {
+        setOcrError(`${res.data.fallidos} imagen(es) con error`);
+      }
+    } catch (err) {
+      setOcrError(apiErrorMessage(err));
+    } finally {
+      setOcrLoading(false);
+    }
+  };
+
+  const ocrResultPlayer = (result: MatchAnalyzeResult, index: number): number | null => {
+    if (result.player != null) return result.player;
+    const assigned = ocrAssign[index];
+    return assigned != null && assigned !== "" ? Number(assigned) : null;
+  };
+
+  const applyOcrResult = (index: number) => {
+    const result = ocrResults[index];
+    const playerId = ocrResultPlayer(result, index);
+    if (playerId == null) {
+      setOcrError("Asigná un jugador antes de editar");
+      return;
+    }
+    if (!perfRows.some((r) => r.player === playerId)) {
+      setOcrError("El jugador detectado no está en este partido");
+      return;
+    }
+    const stats = (result.stats || {}) as Record<string, number | null>;
+    const draft: Record<string, string> = {};
+    for (const field of PERF_FIELDS) {
+      const v = stats[field.key];
+      draft[field.key] = v != null ? String(v) : field.required ? "" : "0";
+    }
+    setPerfDraft(draft);
+    setPerfExpanded(playerId);
+    setPerfError(null);
+    setOcrError(null);
+  };
+
+  const saveOcrResult = async (index: number) => {
+    if (!match) return;
+    const result = ocrResults[index];
+    const playerId = ocrResultPlayer(result, index);
+    if (playerId == null) {
+      setOcrError("Asigná un jugador antes de guardar");
+      return;
+    }
+    if (!result.stats || result.stats.rating == null) {
+      setOcrError("Sin rating detectado: usá Editar para completarlo");
+      return;
+    }
+    setPerfSaving(true);
+    setOcrError(null);
+    try {
+      const stats = result.stats as unknown as Record<string, number | null>;
+      const item: Record<string, number | string> = { player: playerId };
+      for (const field of PERF_FIELDS) {
+        const v = stats[field.key];
+        item[field.key] = v != null ? v : 0;
+      }
+      await matchPerformancesApi.saveBatch(match.id, [
+        item as unknown as Parameters<typeof matchPerformancesApi.saveBatch>[1][number],
+      ]);
+      const row = perfRows.find((r) => r.player === playerId);
+      setNotice(`Rendimiento de ${row?.nickname || result.filename} guardado`);
+      setOcrResults((prev) => prev.filter((_, i) => i !== index));
+      fetchPerformances();
+      fetchMatch();
+    } catch (err) {
+      setOcrError(apiErrorMessage(err));
     } finally {
       setPerfSaving(false);
     }
@@ -789,6 +881,156 @@ export default function MatchDetailPage() {
             <p className="empty" style={{ marginBottom: "var(--space-3)", textAlign: "left" }}>
               Cargá las stats de cada jugador. El rating es obligatorio; el resto admite 0.
             </p>
+
+            <div
+              className="transfer-form"
+              style={{
+                gridTemplateColumns: "1fr auto auto",
+                alignItems: "end",
+                marginBottom: "var(--space-4)",
+              }}
+            >
+              <div className="form-group">
+                <label>Capturas de FIFA (máx. 30)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => setOcrFiles(Array.from(e.target.files || []))}
+                />
+              </div>
+              <div className="form-group">
+                <label>&nbsp;</label>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={runOcr}
+                  disabled={ocrLoading || ocrFiles.length === 0 || perfSaving}
+                >
+                  {ocrLoading ? "Analizando..." : `Analizar con OCR (${ocrFiles.length})`}
+                </button>
+              </div>
+              <div className="form-group">
+                <label>&nbsp;</label>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => {
+                    setOcrResults([]);
+                    setOcrError(null);
+                    setOcrFiles([]);
+                  }}
+                  disabled={ocrLoading || (ocrResults.length === 0 && ocrFiles.length === 0)}
+                >
+                  Limpiar
+                </button>
+              </div>
+            </div>
+
+            {ocrError && (
+              <p className="error-msg" style={{ textAlign: "left" }}>
+                {ocrError}
+              </p>
+            )}
+
+            {ocrResults.length > 0 && (
+              <div className="history-list" style={{ marginBottom: "var(--space-4)" }}>
+                {ocrResults.map((result, index) => {
+                  const playerId = ocrResultPlayer(result, index);
+                  const row = playerId != null ? perfRows.find((r) => r.player === playerId) : undefined;
+                  const stats = (result.stats || {}) as Record<string, number | null>;
+                  return (
+                    <div
+                      key={`${result.filename}-${index}`}
+                      className="history-item"
+                      style={{ flexDirection: "column", alignItems: "stretch" }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "var(--space-3)",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <span className="event-player">
+                          {row ? row.nickname : result.player_nickname || result.detected_name || "Sin jugador"}
+                          <span className="event-club" style={{ marginLeft: "var(--space-2)" }}>
+                            {result.filename}
+                          </span>
+                        </span>
+
+                        {result.player == null && (
+                          <select
+                            value={ocrAssign[index] ?? ""}
+                            onChange={(e) =>
+                              setOcrAssign({
+                                ...ocrAssign,
+                                [index]: e.target.value === "" ? "" : Number(e.target.value),
+                              })
+                            }
+                          >
+                            <option value="">Asignar jugador...</option>
+                            {perfRows.map((r) => (
+                              <option key={r.player} value={r.player}>
+                                {r.nickname} ({r.clubName})
+                              </option>
+                            ))}
+                          </select>
+                        )}
+
+                        <div className="history-chips">
+                          {PERF_SUMMARY_KEYS.map((key) => (
+                            <span key={key} className="stat-chip">
+                              <span className="stat-chip-label">{PERF_FIELD_LABELS[key]}</span>
+                              <span className="stat-chip-value">
+                                {stats[key] != null ? stats[key] : "—"}
+                              </span>
+                            </span>
+                          ))}
+                        </div>
+
+                        <div style={{ display: "flex", gap: "var(--space-2)" }}>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-ghost"
+                            onClick={() => applyOcrResult(index)}
+                            disabled={perfSaving}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-primary"
+                            onClick={() => saveOcrResult(index)}
+                            disabled={perfSaving}
+                          >
+                            {perfSaving ? "Guardando..." : "Guardar"}
+                          </button>
+                        </div>
+                      </div>
+
+                      {(result.warnings.length > 0 || result.errors.length > 0) && (
+                        <ul style={{ textAlign: "left", margin: "var(--space-2) 0 0", paddingLeft: "1.2em" }}>
+                          {result.errors.map((msg, i) => (
+                            <li key={`e${i}`} className="error-msg">
+                              {msg}
+                            </li>
+                          ))}
+                          {result.warnings.map((msg, i) => (
+                            <li key={`w${i}`} style={{ color: "var(--text-muted, #aaa)", fontSize: "0.85em" }}>
+                              {msg}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             {[
               { label: match.home_club_name, rows: perfRows.filter((r) => r.isHome) },
               { label: match.away_club_name, rows: perfRows.filter((r) => !r.isHome) },

@@ -284,6 +284,45 @@ export interface MatchPerformancePayload {
   sprint_distance_km?: number;
 }
 
+export interface MatchAnalyzeStats {
+  rating: number | null;
+  goals: number | null;
+  assists: number | null;
+  shots: number | null;
+  shot_accuracy_pct: number | null;
+  passes: number | null;
+  pass_accuracy_pct: number | null;
+  dribbles: number | null;
+  dribble_success_pct: number | null;
+  tackles: number | null;
+  tackle_success_pct: number | null;
+  offsides: number | null;
+  fouls: number | null;
+  possession_won: number | null;
+  possession_lost: number | null;
+  minutes_played: number | null;
+  distance_km: number | null;
+  sprint_distance_km: number | null;
+}
+
+export interface MatchAnalyzeResult {
+  filename: string;
+  success: boolean;
+  detected_name: string | null;
+  player: number | null;
+  player_nickname: string | null;
+  stats: MatchAnalyzeStats | null;
+  warnings: string[];
+  errors: string[];
+}
+
+export interface MatchAnalyzeResponse {
+  total: number;
+  exitosos: number;
+  fallidos: number;
+  results: MatchAnalyzeResult[];
+}
+
 export interface Standing {
   id: number;
   season: number;

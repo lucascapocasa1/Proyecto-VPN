@@ -2,6 +2,7 @@ from django.core.cache import cache
 from django.db import transaction
 from rest_framework import viewsets, permissions, filters, status
 from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 import django_filters
@@ -10,6 +11,10 @@ from .serializers import (
     MatchdaySerializer, MatchSerializer, MatchDetailSerializer,
     MatchPlayerSerializer, MatchEventSerializer, MatchPerformanceSerializer,
 )
+from .services.ocr import (
+    MAX_IMAGES, MAX_IMAGE_BYTES, TesseractNotAvailable,
+    analyze_images as ocr_analyze_images,
+)
 from apps.accounts.permissions import IsSuperAdmin, IsAdminLiga, CanManageLeague
 from apps.standings.services import recalculate_standings
 
@@ -17,6 +22,47 @@ from apps.standings.services import recalculate_standings
 def _refresh_derived(match):
     recalculate_standings(match.season, match.division)
     cache.clear()
+
+
+def _build_roster(match):
+    """Plantel candidato para matchear el apodo OCR: alineación + stints + apodos viejos."""
+    from apps.players.models import Player, PlayerClubHistory
+
+    roster = {}
+
+    def _entry(player_id, nickname):
+        return roster.setdefault(
+            player_id,
+            {"player": player_id, "nickname": nickname, "aliases": set()},
+        )
+
+    for mp in MatchPlayer.objects.filter(match=match).select_related("player"):
+        if mp.player_id is None:
+            continue
+        entry = _entry(mp.player_id, mp.player.nickname)
+        if mp.player.nickname:
+            entry["aliases"].add(mp.player.nickname.lower())
+        if mp.display_name:
+            entry["aliases"].add(mp.display_name.lower())
+
+    stints = PlayerClubHistory.objects.filter(
+        club_season_id__in=[match.home_club_season_id, match.away_club_season_id],
+    ).select_related("player")
+    for stint in stints:
+        entry = _entry(stint.player_id, stint.player.nickname)
+        if stint.player.nickname:
+            entry["aliases"].add(stint.player.nickname.lower())
+
+    if roster:
+        players = Player.objects.filter(id__in=roster.keys()).prefetch_related(
+            "identity_history"
+        )
+        for player in players:
+            for change in player.identity_history.all():
+                if change.nickname:
+                    roster[player.id]["aliases"].add(change.nickname.lower())
+
+    return list(roster.values())
 
 
 PERFORMANCE_STAT_FIELDS = [
@@ -165,6 +211,67 @@ class MatchViewSet(viewsets.ModelViewSet):
             results, many=True, context={"request": request}
         )
         return Response(output.data, status=status.HTTP_200_OK)
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="performances/analyze",
+        parser_classes=[MultiPartParser, FormParser],
+    )
+    def performances_analyze(self, request, pk=None):
+        """Analiza capturas FIFA con OCR y devuelve stats sugeridas (sin persistir).
+
+        Multipart con `images` (≤30, ≤20MB c/u). Las imágenes se descartan
+        al terminar. El guardado se hace después vía performances/batch.
+        """
+        match = self.get_object()
+        files = request.FILES.getlist("images")
+        if not files:
+            return Response(
+                {"error": "No se enviaron imágenes."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if len(files) > MAX_IMAGES:
+            return Response(
+                {"error": f"Máximo {MAX_IMAGES} imágenes por solicitud."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        images = []
+        for f in files:
+            if not (f.content_type or "").startswith("image/"):
+                return Response(
+                    {"error": f"{f.name}: solo se aceptan imágenes."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            raw = f.read()
+            if len(raw) > MAX_IMAGE_BYTES:
+                return Response(
+                    {"error": f"{f.name}: supera {MAX_IMAGE_BYTES // (1024 * 1024)}MB."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            images.append((f.name, raw))
+
+        try:
+            results = ocr_analyze_images(images, _build_roster(match))
+        except TesseractNotAvailable:
+            return Response(
+                {"error": "Tesseract no está instalado en el servidor."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        except ValueError as exc:
+            return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        ok = sum(1 for r in results if r.get("success"))
+        return Response(
+            {
+                "total": len(results),
+                "exitosos": ok,
+                "fallidos": len(results) - ok,
+                "results": results,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class MatchPlayerViewSet(viewsets.ModelViewSet):

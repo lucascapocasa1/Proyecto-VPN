@@ -5,6 +5,7 @@ import type {
   Player, PlayerDetail, PlayerClubHistory,
   Match, MatchDetail, MatchPlayer, MatchEvent,
   MatchPerformance, MatchPerformancePayload,
+  MatchAnalyzeResponse,
   Standing, PaginatedResponse,
   TopScorer, TopAssist, TopMVP, User, Transfer,
 } from "../types";
@@ -163,6 +164,16 @@ export const matchPerformancesApi = {
   update: (id: number, data: Partial<MatchPerformancePayload>) =>
     api.patch<MatchPerformance>(`/match-performances/${id}/`, data),
   delete: (id: number) => api.delete(`/match-performances/${id}/`),
+  analyze: (matchId: number, files: File[]) => {
+    const form = new FormData();
+    for (const file of files) {
+      form.append("images", file);
+    }
+    return api.post<MatchAnalyzeResponse>(
+      `/matches/${matchId}/performances/analyze/`,
+      form
+    );
+  },
 };
 
 // Standings
