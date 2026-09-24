@@ -17,10 +17,28 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+const RETRY_AFTER_HEADER = "retry-after";
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    if (error.response?.status === 429 && !originalRequest._retry429) {
+      originalRequest._retry429 = true;
+      const retryAfterHeader = error.response.headers?.[RETRY_AFTER_HEADER];
+      const retryAfterSec = Number(retryAfterHeader);
+      const delayMs =
+        Number.isFinite(retryAfterSec) && retryAfterSec > 0
+          ? Math.min(retryAfterSec * 1000, 5000)
+          : 1000;
+      await sleep(delayMs);
+      return api(originalRequest);
+    }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
