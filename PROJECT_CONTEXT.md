@@ -1,4 +1,4 @@
-# Contexto del Proyecto — EA FC Clubes Pro
+# Contexto del Proyecto — VPN · Virtual Pro Network (FC 27 Pro Clubs)
 
 **Leer este archivo al inicio de cada sesión para entender el estado del proyecto.**
 
@@ -32,9 +32,9 @@ Plataforma web para gestionar ligas competitivas de **EA Sports FC — Clubes Pr
 | 1. Arquitectura y modelos | ✅ | 7 apps Django, 21 modelos, Admin, migraciones |
 | 2. Lógica de negocio | ✅ | Services, zones, management commands, seed data |
 | 3. API REST | ✅ | ViewSets, serializers, URLs, auth endpoints |
-| 4. Frontend React | ✅ | 14 páginas, Matchday Broadcast theme, JWT auth, API client |
+| 4. Frontend React | ✅ | 14 páginas, tema VPN (sidebar + navy/azul/violeta), JWT auth, API client |
 | 5. Auth y Permisos | ✅ | 7 clases de permisos, role-based en todos los ViewSets |
-| 6. Tests | ✅ | 139 tests pasando en 6 archivos |
+| 6. Tests | ✅ | 147 tests pasando en 6 archivos |
 | 7. Frontend-Backend Integration | ✅ | CRUD, loading, error handling, role-based UI |
 | 8. Optimization | ✅ | DRF pagination, django-filter, cache, GZip, select_related/prefetch_related |
 | 9. Deployment | ✅ | Render (backend + PostgreSQL) + Cloudflare Pages (frontend) |
@@ -46,6 +46,8 @@ Plataforma web para gestionar ligas competitivas de **EA Sports FC — Clubes Pr
 | 15. Rendimiento Fase 1 | ✅ | `MatchPerformance` + API + historial (commit `1ab0e2f`) |
 | 16. Rendimiento Fase 2 | ✅ | OCR pytesseract + UI de capturas + Docker en Render (commit `6307d43`) — **deploy real pendiente de verificar** |
 | 17. Seed rendimiento + fixes | ✅ | `seed_performances` (34,800 filas), fix clubs fetch-all, credenciales documentadas |
+| 18. Gráficos esenciales (Fase 3) | ✅ | Tab "Rendimiento" (leaderboard AVG/SUM + promedios por posición), evolución y sparklines en perfil (recharts), 3 endpoints de statistics, 147 tests, smoke Playwright OK |
+| 19. Rediseño frontend VPN | ✅ | Shell sidebar "FC 27 PRO CLUBS" + bloque VPN con íconos lucide, topbar con buscador global funcional (jugadores+clubs) y campanita decorativa, Home estilo referencia (Tabla/Últimos Resultados | Próximos/Goleadores/Partido Destacado con `matchesApi`), paleta azul/violeta en charts, avatares en tabla, tabs segmentados, drawer responsive, `npm run build` + lint + smoke Playwright OK |
 
 ---
 
@@ -133,7 +135,7 @@ backend/
 │   ├── players/              # Player, PlayerIdentityHistory, PlayerClubHistory, Transfer
 │   ├── matches/              # Matchday, Match, MatchPlayer, MatchEvent
 │   ├── standings/            # Standing (derivated), services.py, zones.py, seed/fix commands
-│   └── statistics/           # services.py (calcula desde MatchEvent on-demand)
+│   └── statistics/           # services.py (desde MatchEvent on-demand + analytics MatchPerformance)
 ├── test_helpers/base.py      # BaseTestCase reutilizable
 ├── runtime.txt               # Python version for Render
 ├── manage.py
@@ -169,6 +171,9 @@ GET /api/statistics/player_history/?player_id=1
 GET /api/statistics/top_scorers/?season_id=1&division_id=1&limit=10
 GET /api/statistics/top_assists/?season_id=1&division_id=1&limit=10
 GET /api/statistics/top_mvp/?season_id=1&division_id=1&limit=10
+GET /api/statistics/performance_leaderboard/?metric=rating&agg=avg&min_matches=3&season_id=1
+GET /api/statistics/performance_by_position/?season_id=1
+GET /api/statistics/player_match_series/?player_id=1
 ```
 
 ### Endpoint de mercado de pases
@@ -189,20 +194,26 @@ frontend/
 │   │   ├── client.ts          # Axios + JWT interceptors (auto-refresh + retry 429)
 │   │   └── index.ts           # API functions CRUD para todos los endpoints
 │   ├── components/
-│   │   ├── layout/Layout.tsx   # Header (con role badge), Nav, Footer
-│   │   └── ui/
+│   │   ├── layout/Layout.tsx   # Sidebar + topbar (buscador global, campanita, usuario/rol)
+│   │   ├── ui/
 │   │       ├── StandingsTable.tsx  # Tabla con colores de zona (CAMPEÓN/REDUCIDO/etc)
 │   │       ├── MatchCard.tsx       # Link a /matches/:id (detalle)
 │   │       ├── PlayerCard.tsx
 │   │       ├── ClubCard.tsx
 │   │       ├── Loading.tsx         # Spinner animado
-│   │       └── ErrorMessage.tsx    # Error con retry button
+│   │       ├── ErrorMessage.tsx    # Error con retry button
+│   │       └── GlobalSearch.tsx    # Buscador global (debounce, jugadores + clubs)
+│   │   └── charts/
+│   │       ├── LeaderboardChart.tsx      # Top-10 podio oro/plata/bronce + azul
+│   │       ├── RatingEvolutionChart.tsx  # Área de rating por partido
+│   │       ├── PositionCompareChart.tsx  # Grillas por posición ARQ/DEF/MED/DEL
+│   │       └── Sparkline.tsx             # Mini-tendencias en tarjetas del perfil
 │   ├── context/
 │   │   └── AuthContext.tsx     # JWT auth (login, logout, profile)
 │   ├── hooks/
 │   │   └── useCanEdit.ts       # true si rol SUPERADMIN o ADMIN_LIGA
 │   ├── pages/
-│   │   ├── Home.tsx            # Seasons + clubs + top scorers
+│   │   ├── Home.tsx            # Paneles: tabla, resultados, próximos, goleadores, destacado
 │   │   ├── Countries.tsx       # Lista países
 │   │   ├── Leagues.tsx         # Lista ligas
 │   │   ├── Seasons.tsx         # Temporadas + edit inline (estado/nombre, admin)
@@ -214,11 +225,11 @@ frontend/
 │   │   ├── Matches.tsx         # Lista partidos + filtro por estado
 │   │   ├── MatchDetail.tsx     # Marcador + editar resultado/alineaciones/eventos (admin)
 │   │   ├── Transfers.tsx       # Mercado de pases + alta/baja (admin)
-│   │   ├── Statistics.tsx      # Tabs goleadores/asistencias/MVP
+│   │   ├── Statistics.tsx      # Tabs goleadores/asistencias/MVP/rendimiento
 │   │   └── Login.tsx           # Login JWT
 │   ├── types/index.ts         # TypeScript interfaces
 │   ├── App.tsx                 # React Router
-│   ├── App.css                 # Matchday Broadcast theme + forms + filters
+│   ├── App.css                 # Tema VPN (sidebar, tokens navy/azul/violeta) + forms + filters
 │   └── main.tsx
 ├── vite.config.ts             # Proxy a localhost:8000
 ├── package.json
@@ -280,7 +291,7 @@ cd backend
 python manage.py test
 ```
 
-### Resumen de tests (139 total)
+### Resumen de tests (147 total)
 
 | Archivo | Tests | Qué cubre |
 |---------|-------|-----------|
@@ -288,7 +299,7 @@ python manage.py test
 | `apps/clubs/tests.py` | 11 | Clubs, club-season, títulos (CRUD API), validación única |
 | `apps/matches/tests.py` | 51 | Partidos, alineaciones, BOT, eventos, permisos, auto-recalc + MatchPerformance (modelo/batch/historial) + endpoint OCR (parser, preprocessing, perms con pytesseract mockeado) |
 | `apps/standings/tests.py` | 16 | Victoria=3pts, empate, diferencia, posiciones, zonas por división |
-| `apps/statistics/tests.py` | 12 | Goals, assists, own goals, cards, MVP, rankings |
+| `apps/statistics/tests.py` | 20 | Goals, assists, own goals, cards, MVP, rankings + leaderboards de rendimiento (AVG/SUM, min partidos), promedios por posición, serie cronológica de un jugador |
 | `apps/accounts/tests.py` | 29 | Login, register, profile, permisos por rol en todos los endpoints |
 
 ### Base de tests
@@ -429,7 +440,7 @@ GET /api/health/ → {"status": "ok", "db": "ok"}
 | `backend/apps/accounts/permissions.py` | 7 clases de permisos custom |
 | `backend/apps/accounts/urls.py` | Health check endpoint |
 | `backend/apps/standings/services.py` | recalculate_standings, recalculate_all_standings |
-| `backend/apps/statistics/services.py` | Player/club statistics, top scorers/assists/mvp |
+| `backend/apps/statistics/services.py` | Player/club statistics, top scorers/assists/mvp, leaderboard/promedios/serie de `MatchPerformance` |
 | `backend/apps/matches/services.py` | Lineup validation, BOT completion, goal consistency |
 | `frontend/src/api/client.ts` | Axios + JWT interceptors + VITE_API_URL |
 | `frontend/src/api/index.ts` | API CRUD functions para todos los endpoints |
@@ -444,7 +455,7 @@ GET /api/health/ → {"status": "ok", "db": "ok"}
 
 Ver `PROXIMOS_CAMBIOS.md` para detalles completos:
 
-1. **Estadísticas detalladas por partido (rendimiento)** — **Fase 1 ✅ (`1ab0e2f`) y Fase 2 ✅ (`6307d43`)**: modelo `MatchPerformance` (18 campos por jugador por partido), carga manual + OCR (`pytesseract` + Pillow, port de FIFASTATS), Docker en Render (`Dockerfile` + `render.yaml runtime: docker`), imágenes descartadas tras verificar, solo ADMIN_LIGA escribe. **Pendiente (no arrancar hasta que el usuario lo pida): (a) verificar el primer deploy Docker en Render, (b) probar OCR con capturas reales de FIFA.** Sigue Fase 3 (analítica/gráficos)
+1. **Estadísticas detalladas por partido (rendimiento)** — **Fase 1 ✅ (`1ab0e2f`), Fase 2 ✅ (`6307d43`) y Fase 3 esenciales ✅**: modelo `MatchPerformance` (18 campos por jugador por partido), carga manual + OCR (`pytesseract` + Pillow, port de FIFASTATS), Docker en Render (`Dockerfile` + `render.yaml runtime: docker`), imágenes descartadas tras verificar, solo ADMIN_LIGA escribe; 4 gráficos esenciales con recharts (leaderboard AVG/SUM, promedios por posición, evolución de rating, sparklines) + 3 endpoints de statistics; estética resuelta con el rediseño de la fase 19. **Pendiente (no arrancar hasta que el usuario lo pida): (a) verificar el primer deploy Docker en Render, (b) probar OCR con capturas reales de FIFA, (c) gráficos opcionales #3/#6/#7/#8/#10**
 2. **Mercado de pases (v2)** — ventana de pases, free agents, invitaciones con expiración (v1 de registro admin ya está)
 3. **Brasil** — Agregar como tercer país
 4. **Reducido/Promoción** — generar las llaves del Reducido y la Promoción como partidos (formato por definir)
@@ -460,7 +471,7 @@ cd backend
 python manage.py test --verbosity=2
 ```
 
-139 tests en 6 archivos, todos pasando.
+147 tests en 6 archivos, todos pasando.
 
 ### Frontend (Playwright)
 

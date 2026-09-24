@@ -88,7 +88,7 @@ Nota: desde la Fase 11, S2 esta ACTIVE con fixtures: +22 matchdays (11 por divis
 
 ### Estado
 
-✅ Implementado y verificado (139 tests pasando, E2E Playwright OK)
+✅ Implementado y verificado (147 tests pasando, E2E Playwright OK)
 
 **S2 ahora está ACTIVE** (no UPCOMING): 11 matchdays por división (J1-J10 FINISHED, J11 SCHEDULED), con transiciones S1→S2 aplicadas y fixtures regenerados. Comandos idempotentes: `seed_data`, `seed_s2`, `fix_season_transitions`.
 
@@ -213,15 +213,20 @@ Esto es **ademas** de la Opcion A actual (resultados/alineaciones/eventos), que 
 - Tests: parser con textos OCR fijos, preprocessing con imagen Pillow generada, endpoint con `pytesseract` mockeado (sin binario en CI), permisos.
 - Al arrancar la fase: re-fetchear `parser.js`, `ocr.js`, `imageProcessor.js`, `routes.js` del repo FIFASTATS para portar al detalle exacto.
 
-### Fase 3 — Analitica (cuando haya datos reales)
+### Fase 3 — Analitica (esenciales ✅, opcionales pendientes)
 
-- `statistics/services.py`: leaderboards por metrica (`AVG`/`SUM` de rating, km, precision de pases, etc.) con los mismos filtros season/division/league/country/game; evolucion por jugador (serie ordenada por fecha); cache 600s (los `cache.clear()` ya estan cubiertos por las mutaciones de la Fase 1).
-- Endpoints nuevos en `statistics/views.py`.
-- Frontend: graficos (lib a elegir en el momento, ej. recharts), upgrade de Statistics.tsx, sparklines en PlayerProfile.
+**Hecho:**
+
+- `statistics/services.py`: `PERFORMANCE_METRICS` (18 campos) + `get_performance_leaderboard` (AVG/SUM con `min_matches`, orden por valor), `get_performance_by_position` (4 posiciones, 6 metricas), `get_player_match_series` (cronologica; rating/minutos/km de MatchPerformance, goles/asis/MVP/tarjetas de MatchEvent para calzar con las tarjetas del perfil); filtros season/division; cache 600s (los `cache.clear()` ya estan cubiertos por las mutaciones de la Fase 1).
+- Endpoints en `statistics/views.py`: `performance_leaderboard` (400 en metrica/agg invalidos), `performance_by_position`, `player_match_series` (400 sin player, 404 invalido); publicos.
+- Frontend con **recharts v3**: tab "Rendimiento" en Statistics (selector de metrica, toggle promedio/total, min 1/3/5/10+ partidos, top-10 oro/plata/bronce + grilla "Promedios por posicion" ARQ/DEF/MED/DEL), "Evolucion de rendimiento" (area de rating con linea de promedio) y sparklines en las tarjetas de PlayerProfile.
+- Tests: +8 (`PerformanceAnalyticsTest`) = **147 totales**; smoke Playwright OK (0 errores de consola, 0 requests fallidas).
+
+**Diferidos (opcionales, cuando el usuario lo pida):** graficos #3 (heatmap), #6 (radar por jugador), #7 (tendencia por club), #8 (scatter rating vs victoria), #10 (distribucion de minutos). Los cambios esteticos quedaron resueltos con el rediseño frontend (README "Fase 18" / PROJECT_CONTEXT fila 19): paleta azul/violeta en los charts, shell sidebar+topbar, Home estilo referencia.
 
 ### Garantias
 
-- **Competicion intacta**: standings/rankings actuales salen de MatchEvent + resultado; una migracion nueva y cero cambios en modelos viejos (los 139 tests siguen pasando).
+- **Competicion intacta**: standings/rankings actuales salen de MatchEvent + resultado; una migracion nueva y cero cambios en modelos viejos (los 147 tests siguen pasando).
 - Partidos seed/legacy sin capturas -> sin fila de performance (fallback en UI, jamas rellenar con ceros).
 - BOT (`MatchPlayer.player=NULL`) no puede tener performance (validado en el modelo).
 
@@ -238,12 +243,14 @@ Esto es **ademas** de la Opcion A actual (resultados/alineaciones/eventos), que 
 
 ✅ **Fase 1 implementada** (commit `1ab0e2f`): modelo `MatchPerformance` + migracion, ViewSet/filtros, batch upsert con auto-create, historial publico, secciones MatchDetail/PlayerProfile, tests.
 ✅ **Fase 2 implementada** (commit `6307d43`): `apps/matches/services/ocr.py` (port completo de FIFASTATS), endpoint `analyze`, bloque OCR con verificacion humana en MatchDetail, `Dockerfile` + `render.yaml` (`runtime: docker`, `preDeployCommand: migrate`), `pytesseract` en requirements; smoke OCR con imagen sintetica OK.
+✅ **Fase 3 esenciales implementada**: 3 endpoints de analitica (leaderboard AVG/SUM, promedios por posicion, serie cronologica), tab "Rendimiento" en Statistics, "Evolucion de rendimiento" + sparklines en PlayerProfile (recharts v3), +8 tests = 147, smoke Playwright OK.
+✅ **Rediseño frontend implementado (README Fase 18 / PROJECT_CONTEXT fila 19)**: sidebar/topbar con buscador global, Home estilo referencia, paleta azul/violeta en charts, responsive, smoke Playwright OK.
 
 **Pendiente (no arrancar hasta que el usuario lo pida):**
 
 1. **Verificar el primer deploy Docker en Render** — build de la imagen, migrate automatico, smoke de `/api/health/`; el codigo esta, el deploy real no se probo.
 2. **Probar OCR con capturas reales de FIFA** — afinar recortes/keywords si hace falta.
-3. **Fase 3 (analitica)** — leaderboards AVG/SUM, evolucion por jugador, graficos (plan arriba).
+3. **Graficos opcionales de la Fase 3** (#3, #6, #7, #8, #10) — los 4 esenciales ya estan; estos solo si el usuario los pide.
 
 Seed local de desarrollo: `python manage.py seed_performances` crea ~34,800 filas (goals/assists derivados de MatchEvent reales, RNG determinista `--seed`, idempotente, `--reset`).
 

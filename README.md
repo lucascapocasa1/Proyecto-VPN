@@ -1,6 +1,6 @@
-# EA FC Clubes Pro — Plataforma de Gestión de Ligas
+# VPN — Virtual Pro Network · FC 27 Pro Clubs
 
-Plataforma web profesional para gestionar competiciones de **EA Sports FC — Clubes Pro**.
+Plataforma web profesional para gestionar competiciones de **EA Sports FC — Clubes Pro**, con identidad **VPN (Virtual Pro Network)**.
 
 ## Stack
 
@@ -36,9 +36,9 @@ ea-fc-platform/
 ├── frontend/
 │   ├── src/
 │   │   ├── api/                   # Axios client + endpoints
-│   │   ├── components/            # Layout, UI components
-│   │   │   ├── layout/Layout.tsx
-│   │   │   └── ui/
+│   │   ├── components/            # Layout, UI components, charts
+│   │   │   ├── layout/Layout.tsx   # Sidebar + topbar (buscador, campanita)
+│   │   │   ├── ui/
 │   │   │       ├── StandingsTable.tsx
 │   │   │       ├── MatchCard.tsx
 │   │   │       ├── PlayerCard.tsx
@@ -46,13 +46,15 @@ ea-fc-platform/
 │   │   │       ├── Loading.tsx
 │   │   │       ├── ErrorMessage.tsx
 │   │   │       ├── Pagination.tsx
-│   │   │       └── SearchBar.tsx
+│   │   │       ├── SearchBar.tsx
+│   │   │       └── GlobalSearch.tsx
+│   │   │   └── charts/             # Leaderboard, evolución, posiciones, sparklines
 │   │   ├── context/               # AuthContext (JWT)
 │   │   ├── hooks/                 # useCanEdit (SUPERADMIN/ADMIN_LIGA)
 │   │   ├── pages/                 # Todas las páginas (14)
 │   │   ├── types/                 # TypeScript interfaces
 │   │   ├── App.tsx
-│   │   └── App.css                # Matchday Broadcast theme
+│   │   └── App.css                # Tema VPN (tokens navy/azul/violeta)
 │   ├── vite.config.ts
 │   └── package.json
 ├── .gitignore
@@ -95,7 +97,7 @@ ea-fc-platform/
 - **Layout** con Header, navegación, Footer
 - **UI Components**: StandingsTable (colores de zona), MatchCard (link al detalle), PlayerCard, ClubCard, Loading, ErrorMessage
 - **14 páginas**: Home, Countries, Leagues, Seasons, Standings, Clubs, ClubProfile, Players, PlayerProfile, Matches, MatchDetail, Transfers, Statistics, Login
-- **Tema Matchday Broadcast**: Barlow Condensed + IBM Plex Sans, accent verde césped `#22c55e`
+- **Tipografía Matchday Broadcast**: Barlow Condensed + IBM Plex Sans (hoy con accent azul/violeta, ver Fase 18)
 - **Build** pasa sin errores
 
 ### Fase 5 — Autenticación y Permisos
@@ -107,13 +109,13 @@ ea-fc-platform/
 
 ### Fase 6 — Tests
 
-- **139 tests**, todos pasando
+- **147 tests**, todos pasando
 - **6 archivos de tests**:
   - `apps/players/tests.py` (20 tests): creación, nicknames, historial, mercado de pases
   - `apps/clubs/tests.py` (11 tests): clubs, club-season, títulos (CRUD API)
-  - `apps/matches/tests.py` (18 tests): partidos, alineaciones, BOT, eventos, permisos, auto-recalc
+  - `apps/matches/tests.py` (51 tests): partidos, alineaciones, BOT, eventos, permisos, auto-recalc + MatchPerformance + OCR
   - `apps/standings/tests.py` (16 tests): recálculo de posiciones, zonas por división
-  - `apps/statistics/tests.py` (12 tests): estadísticas derivadas, rankings
+  - `apps/statistics/tests.py` (20 tests): estadísticas derivadas, rankings + analítica de rendimiento (leaderboard/promedios/serie)
   - `apps/accounts/tests.py` (29 tests): auth, permisos por rol en todos los endpoints
 
 ```bash
@@ -231,6 +233,21 @@ python manage.py test
 - **Clubes**: `clubsApi.list` pagina hasta traer todos los clubs (antes se cortaba en la página de 25/20 del backend); el hero de Home ahora dice "Equipos en liga" (40 = filas de la tabla de la temporada destacada, semántica correcta)
 - **Credenciales de desarrollo** documentadas en `PROJECT_CONTEXT.md` (4 usuarios, todos `admin123`)
 
+### Fase 17 — Gráficos esenciales de rendimiento (Fase 3)
+
+- **Tab "Rendimiento" en Estadísticas**: leaderboard genérico con selector de las 18 métricas, toggle Promedio/Total (AVG/SUM) y mínimo de partidos (1/3/5/10+), top-10 en oro/plata/bronce; grilla "Promedios por posición" (rating, precisión de pases, regates, entradas, distancia, posesión ganada) coloreada ARQ/DEF/MED/DEL
+- **Perfil de jugador**: sección "Evolución de rendimiento" (área de rating por partido con línea de promedio) + sparklines en las tarjetas de estadísticas (goles, asistencias, MVP, amarillas, rojas)
+- **Backend**: `GET /api/statistics/performance_leaderboard/`, `/performance_by_position/`, `/player_match_series/` (cache 600s, públicos); la serie usa `MatchPerformance` para rating/minutos/km y `MatchEvent` para goles/asis/MVP/tarjetas (calzan con las tarjetas del perfil)
+- **Lib**: recharts v3.10; verificado con 147 tests + smoke Playwright (0 errores de consola, 0 requests fallidas); gráficos opcionales #3/#6/#7/#8/#10 diferidos
+
+### Fase 18 — Rediseño frontend (VPN / FC 27 Pro Clubs)
+
+- **Shell**: `Layout` con sidebar 260px (marca "FC 27 PRO CLUBS", navegación con íconos `lucide-react`, bloque "VPN · VIRTUAL PRO NETWORK" al pie) y topbar sticky con **buscador global funcional** (jugadores vía `search` de la API + clubs filtrados, dropdown con links), campanita decorativa (sin lógica, feature futura) y usuario + rol + logout
+- **Home estilo referencia**: hero "Virtual Pro Network" + grid 1fr/360px con Tabla de Posiciones y Últimos Resultados (izq.) y Próximos Partidos, Máximos Goleadores y Partido Destacado (der.), todo con las mismas APIs (`standingsApi`, `statisticsApi`, `matchesApi` FINISHED/SCHEDULED)
+- **Estética**: tokens navy `#050B18` + azul `#3b82f6` + violeta `#7c3aed` en `App.css` (badges pill, tabs segmentados, tablas compactas, hero con gradiente), paleta azul/violeta en los charts (podio oro/plata/bronce conservado), avatares en `StandingsTable`, `SectionHeader` con `icon`
+- **Responsive/animaciones**: drawer móvil con overlay ≤900px, grid de una columna ≤1100px, `fadeInUp` escalonado en paneles, `prefers-reduced-motion` respetado
+- **Verificación**: `npm run build` + `lint` (solo warnings preexistentes) + smoke Playwright (login, paneles, búsqueda, tabla con avatares, drawer, 0 errores de consola); capturas en `test_screenshots/redesign_*.png`
+
 ---
 
 ## Modelo de datos
@@ -343,6 +360,9 @@ GET /api/standings/?season=1&division=1
 GET /api/statistics/top_scorers/?season_id=1&division_id=1&limit=10
 GET /api/statistics/top_assists/?season_id=1&division_id=1&limit=10
 GET /api/statistics/top_mvp/?season_id=1&division_id=1&limit=10
+GET /api/statistics/performance_leaderboard/?metric=rating&agg=avg&min_matches=3
+GET /api/statistics/performance_by_position/?season_id=1
+GET /api/statistics/player_match_series/?player_id=1
 GET /api/statistics/player/?player_id=1&season_id=1
 GET /api/statistics/player_history/?player_id=1
 GET /api/match-performances/?match=1&match_player=2
@@ -451,7 +471,7 @@ npm run dev
 11. **Edición inline por página**: no hay panel admin central; cada página (partido, club, jugador, temporada) expone sus controles de edición según `useCanEdit`
 12. **Recálculo automático de posiciones**: toda mutación de Match/MatchPlayer/MatchEvent dispara `_refresh_derived` → `recalculate_standings` + `cache.clear()`
 13. **Rate limit solo en auth**: sin throttles globales; `login/register/refresh` limitados a 10/min por IP; el frontend reintenta 429 una vez
-14. **Rendimiento por partido**: `MatchPerformance` (19 stats) + carga manual y por OCR (pytesseract, port de FIFASTATS) + seed local consistente con los MatchEvent
+14. **Rendimiento por partido**: `MatchPerformance` (19 stats) + carga manual y por OCR (pytesseract, port de FIFASTATS) + seed local consistente con los MatchEvent + analítica (leaderboards AVG/SUM, promedios por posición, evolución y sparklines con recharts)
 
 ---
 
@@ -459,7 +479,7 @@ npm run dev
 
 Ver `PROXIMOS_CAMBIOS.md` para el plan detallado:
 
-- **Estadísticas detalladas por partido** — **Fase 1 ✅ (`1ab0e2f`) y Fase 2 ✅ (`6307d43`) implementadas** (PROXIMOS_CAMBIOS.md #4): modelo `MatchPerformance`, OCR con `pytesseract` + Pillow (port de FIFASTATS) con verificación humana antes de guardar, backend con Docker en Render. **Pendiente: verificar el primer deploy en Render y probar OCR con capturas reales; Fase 3 (analítica/gráficos) sin arrancar**
+- **Estadísticas detalladas por partido** — **Fase 1 ✅ (`1ab0e2f`), Fase 2 ✅ (`6307d43`) y Fase 3 esenciales ✅** (PROXIMOS_CAMBIOS.md #4): modelo `MatchPerformance`, OCR con `pytesseract` + Pillow (port de FIFASTATS) con verificación humana antes de guardar, backend con Docker en Render, y los 4 gráficos esenciales (leaderboard, promedios por posición, evolución de rating, sparklines); estética resuelta con el rediseño de la Fase 18. **Pendiente: verificar el primer deploy en Render, probar OCR con capturas reales y gráficos opcionales**
 - **Mercado de pases v2** — Free agents, invitaciones a clubes, ventana de pases controlada por admin (v1 de registro manual ya implementada)
 - **Reducido/Promoción** — Generar las llaves del Reducido y la Promoción como partidos
 - **Brasil** — Tercer país con la misma estructura de ligas

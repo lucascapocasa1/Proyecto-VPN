@@ -1,20 +1,22 @@
-# Guia de Usuario — EA FC Clubes Pro
+# Guia de Usuario — VPN · Virtual Pro Network (FC 27 Pro Clubs)
 
-Plataforma web para gestionar ligas competitivas de **EA Sports FC — Clubes Pro**.
+Plataforma web para gestionar ligas competitivas de **EA Sports FC — Clubes Pro**, con identidad **VPN (Virtual Pro Network)**.
 
 ## Inicio de sesion
 
 1. Ir a la URL de la plataforma
 2. Click en "Iniciar Sesion"
 3. Ingresar usuario y contrasena
-4. El sistema mostrara tu rol en el header (SUPERADMIN, ADMIN_LIGA, ADMIN_CLUB, PLAYER, USER)
+4. El sistema mostrara tu rol en la barra superior (SUPERADMIN, ADMIN_LIGA, ADMIN_CLUB, PLAYER, USER)
 
 ## Navegacion
 
+La interfaz tiene un **menu lateral (sidebar)** con la marca "FC 27 PRO CLUBS" y, al pie, el sello **VPN — VIRTUAL PRO NETWORK**. La barra superior incluye un **buscador global** (escribi 2+ letras para encontrar equipos o jugadores), el usuario con su rol y el boton de salir. La campanita de notificaciones es decorativa por ahora.
+
 ### Inicio (`/`)
-- Temporadas activas
-- Clubes destacados
-- Goleadores lideres
+- Hero "Virtual Pro Network" con la temporada destacada
+- **Tabla de Posiciones** (top 8) y **Ultimos Resultados** (columna izquierda)
+- **Proximos Partidos**, **Maximos Goleadores** y **Partido Destacado** (columna derecha)
 
 ### Ligas (`/leagues`)
 - Lista de todas las ligas por pais
@@ -41,6 +43,7 @@ Plataforma web para gestionar ligas competitivas de **EA Sports FC — Clubes Pr
 - Lista de todos los jugadores
 - Busqueda por nickname
 - Click en un jugador para ver estadisticas, historial y rendimiento partido a partido (rating, minutos, goles, asistencias)
+- El perfil incluye "Evolucion de rendimiento" (grafico de rating por partido) y sparklines en las tarjetas de estadisticas
 - Los ADMIN_LIGA+ pueden editar nickname, posicion, plataforma, pais y estado desde el perfil
 
 ### Partidos (`/matches`)
@@ -62,8 +65,9 @@ Plataforma web para gestionar ligas competitivas de **EA Sports FC — Clubes Pr
 - Alta y baja de transferencias (ADMIN_LIGA+); eliminar revierte la ultima transferencia del jugador
 
 ### Estadisticas (`/statistics`)
-- Tabs: Goleadores / Asistencias / MVP
+- Tabs: Goleadores / Asistencias / MVP / **Rendimiento**
 - Filtro por temporada y division
+- Tab "Rendimiento": leaderboard de las 18 metricas (rating, goles, km, precision...) con promedio o total y minimo de partidos; abajo, promedios por posicion (ARQ/DEF/MED/DEL)
 
 ## Roles
 

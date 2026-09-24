@@ -1,4 +1,4 @@
-# Guia de Desarrollador — EA FC Clubes Pro
+# Guia de Desarrollador — VPN · FC 27 Pro Clubs
 
 ## Stack
 
@@ -43,7 +43,7 @@ cd backend
 python manage.py test
 ```
 
-**139 tests** cubriendo auth, permisos, players, clubs, matches, standings, statistics, mercado de pases, rendimiento por partido (MatchPerformance) y OCR (con `pytesseract` mockeado).
+**147 tests** cubriendo auth, permisos, players, clubs, matches, standings, statistics (incluida la analítica de rendimiento: leaderboards AVG/SUM, promedios por posición, serie cronológica), mercado de pases, rendimiento por partido (MatchPerformance) y OCR (con `pytesseract` mockeado).
 
 Para E2E con Playwright (requiere backend + frontend corriendo):
 
@@ -123,6 +123,9 @@ GET /api/statistics/player_history/?player_id=1
 GET /api/statistics/top_scorers/?season_id=1&division_id=1&limit=10
 GET /api/statistics/top_assists/?season_id=1&division_id=1&limit=10
 GET /api/statistics/top_mvp/?season_id=1&division_id=1&limit=10
+GET /api/statistics/performance_leaderboard/?metric=rating&agg=avg&min_matches=3&season_id=1
+GET /api/statistics/performance_by_position/?season_id=1
+GET /api/statistics/player_match_series/?player_id=1
 ```
 
 ### Rendimiento por partido (MatchPerformance)
@@ -194,8 +197,18 @@ Ver `PROXIMOS_CAMBIOS.md` #4 para el plan completo de **estadisticas detalladas 
 
 1. **Fase 1 ✅** (commit `1ab0e2f`) — Modelo `MatchPerformance` (OneToOne a `MatchPlayer`, 18 campos, valida no-BOT), `MatchPerformanceViewSet`, batch upsert con auto-create de `MatchPlayer` (validado contra `PlayerClubHistory`), historial por jugador, secciones en MatchDetail/PlayerProfile, tests.
 2. **Fase 2 ✅** (commit `6307d43`) — OCR: `apps/matches/services/ocr.py` (preprocess con ratios de `imageProcessor.js` + port de `parser.js`: first-number, fix 6/9, O->0, Levenshtein vs plantel), `POST /api/matches/{id}/performances/analyze/` (hasta 30 imgs, concurrencia 2, imagenes descartadas), bloque OCR con verificacion en MatchDetail. **Dockerfile + render.yaml migrados a Docker en Render Free** (paquetes `tesseract-ocr` + `tesseract-ocr-spa`); local: Tesseract via winget.
-3. **Fase 3 ⏳ (sin arrancar)** — Analitica: leaderboards AVG/SUM por metrica, evolucion por jugador, graficos (cache 600s).
+3. **Fase 3 esenciales ✅** — Analitica: `get_performance_leaderboard` (AVG/SUM de cualquiera de las 18 metricas, `min_matches`), `get_performance_by_position` (ARQ/DEF/MED/DEL), `get_player_match_series` (serie cronologica; rating/minutos/km de MatchPerformance, goles/asis/MVP/tarjetas de MatchEvent) en `statistics/services.py` + acciones `performance_leaderboard` / `performance_by_position` / `player_match_series` en `statistics/views.py` (cache 600s, publicos). Frontend: tab "Rendimiento" en Statistics (selector de metrica, toggle promedio/total, minimo de partidos, top-10 con medallas, grilla por posicion) + "Evolución de rendimiento" y sparklines en PlayerProfile, con recharts v3. Estetica resuelta con el rediseño de la Fase 18 (paleta azul/violeta). Diferidos: graficos opcionales #3/#6/#7/#8/#10.
 
 **Pendiente (no arrancar hasta que el usuario lo pida):** (a) verificar el primer deploy Docker en Render, (b) probar OCR con capturas reales de FIFA y afinar recortes/keywords.
 
-Garantias: Match/MatchPlayer/MatchEvent intactos (139 tests sin riesgo); MatchEvent sigue siendo autoridad para standings/rankings; seed local `seed_performances` consistente con los MatchEvent reales.
+Garantias: Match/MatchPlayer/MatchEvent intactos (147 tests sin riesgo); MatchEvent sigue siendo autoridad para standings/rankings; seed local `seed_performances` consistente con los MatchEvent reales.
+
+---
+
+## Frontend — shell y rediseño (Fase 18)
+
+- `frontend/src/components/layout/Layout.tsx` — sidebar (`NAV_ITEMS` con rutas + íconos lucide-react, drawer para ≤900px) + topbar (buscador, campanita decorativa, usuario/rol/logout); preserva toda la lógica de `AuthContext`.
+- `frontend/src/components/ui/GlobalSearch.tsx` — buscador global con debounce 250ms: jugadores via `playersApi.list({search})` y clubs via `clubsApi.list()` filtrados client-side (la API de clubs no acepta texto libre; se cachea en un module-level promise). Enter navega al primer resultado.
+- `frontend/src/App.css` — secciones `SHELL — SIDEBAR + TOPBAR`, `HOME - PANELS`, `FASE D/E`; tokens de color en `:root` (navy `#050B18`, azul `#3b82f6`, violeta `#7c3aed`).
+- Charts (`frontend/src/components/charts/`): paleta azul/violeta; `LeaderboardChart` conserva oro/plata/bronce para el podio y usa azul para el resto.
+- Smoke: `with_server.py` usa `cmd.exe` → los comandos `--server` deben usar `&&` (no `;`). Ojo con `page.screenshot(full_page=True)` justo tras un click: puede capturar un frame stale; usar viewport screenshot para verificar cambios de estado.
