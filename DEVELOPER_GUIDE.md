@@ -43,7 +43,7 @@ cd backend
 python manage.py test
 ```
 
-**106 tests** cubriendo auth, permisos, players, clubs, matches, standings, statistics y mercado de pases.
+**139 tests** cubriendo auth, permisos, players, clubs, matches, standings, statistics, mercado de pases, rendimiento por partido (MatchPerformance) y OCR (con `pytesseract` mockeado).
 
 Para E2E con Playwright (requiere backend + frontend corriendo):
 
@@ -111,7 +111,7 @@ GET  /api/schema/              -> OpenAPI schema
 
 ### CRUD (todos siguen patron GET/POST/GET{id}/PUT/PATCH{id}/DELETE{id})
 
-countries, leagues, seasons, divisions, clubs, club-seasons, club-titles, players, transfers, matchdays, matches, match-players, match-events, standings, users, league-admins, club-admins
+countries, leagues, seasons, divisions, clubs, club-seasons, club-titles, players, transfers, matchdays, matches, match-players, match-events, match-performances, standings, users, league-admins, club-admins
 
 Nota: `DELETE /api/transfers/{id}/` revierte solo la ultima transferencia del jugador.
 
@@ -124,6 +124,19 @@ GET /api/statistics/top_scorers/?season_id=1&division_id=1&limit=10
 GET /api/statistics/top_assists/?season_id=1&division_id=1&limit=10
 GET /api/statistics/top_mvp/?season_id=1&division_id=1&limit=10
 ```
+
+### Rendimiento por partido (MatchPerformance)
+
+```
+GET  /api/match-performances/?match=1&match_player=2   # listado (lectura publica, escritura ADMIN_LIGA)
+POST /api/matches/{id}/performances/batch/             # upsert por jugador (auto-crea MatchPlayer si hubo stint)
+POST /api/matches/{id}/performances/analyze/           # OCR: multipart "images" (<=30), no persiste; ADMIN_LIGA
+GET  /api/players/{id}/performances/?season_id=1       # historial con contexto de partido (publico)
+```
+
+- Los campos de `MatchPerformance` son solo analitica: **standings/rankings siguen saliendo de `MatchEvent` + resultado**.
+- OCR portado de FIFASTATS: recortes de paneles (stats y nombre), binarizado, lang `spa`+fallback `eng`, fix rating 6<->9 y O->0, Levenshtein contra el plantel real, concurrencia 2.
+- Requiere Tesseract instalado (local: `winget UB-Mannheim.TesseractOCR` + `spa.traineddata`; en Render: la imagen Docker ya lo trae).
 
 ### Filtros
 
@@ -142,9 +155,11 @@ GET /api/seasons/?league=1&status=ACTIVE
 
 1. Crear cuenta en render.com
 2. Conectar repositorio de GitHub
-3. Render detecta `render.yaml` automaticamente
-4. Configurar variables de entorno: `SECRET_KEY`, `CORS_ALLOWED_ORIGINS`
-5. Push a GitHub -> deploy automatico
+3. Render detecta `render.yaml` automaticamente — **runtime `docker`** (lee `Dockerfile` de la raiz: python 3.12 + tesseract-ocr + tesseract-ocr-spa + gunicorn)
+4. `preDeployCommand: python manage.py migrate` corre antes del corte; config vars: `SECRET_KEY`, `CORS_ALLOWED_ORIGINS`
+5. Push a GitHub -> build de imagen + deploy automatico (plan Free, $0)
+
+> **Pendiente de verificar**: el primer deploy Docker real en Render (build + migrate + smoke de `/api/health/`). El codigo y la config estan, pero el deploy todavia no se probo.
 
 ### Frontend (Cloudflare Pages)
 
@@ -164,6 +179,7 @@ python manage.py seed_data               # Dataset completo, 2 paises, S2 ACTIVE
 python manage.py seed_dev                # Dataset chico (1 pais)
 python manage.py seed_s2                 # Upgrade idempotente a S2 ACTIVE
 python manage.py fix_season_transitions  # Zonas, titulos S1, transiciones S1->S2, regenera fixtures S2
+python manage.py seed_performances       # Rendimiento por jugador/partido (idempotente, --reset, --seed 42)
 ```
 
 ## Frontend
@@ -172,12 +188,14 @@ python manage.py fix_season_transitions  # Zonas, titulos S1, transiciones S1->S
 - **Edicion inline**: cada pagina expone sus formularios cuando `useCanEdit()` es true
 - **API client**: JWT auto-refresh en 401 + retry unico en 429
 
-## Proximas fases (aprobadas)
+## Rendimiento por partido — estado
 
 Ver `PROXIMOS_CAMBIOS.md` #4 para el plan completo de **estadisticas detalladas por partido**:
 
-1. **Fase 1** — Modelo `MatchPerformance` (OneToOne a `MatchPlayer`, 18 campos, valida no-BOT), `MatchPerformanceViewSet`, batch upsert con auto-create de `MatchPlayer` (validado contra `PlayerClubHistory`), historial por jugador, secciones en MatchDetail/PlayerProfile, tests. Sin tocar deploy.
-2. **Fase 2** — OCR: `apps/matches/services/ocr.py` (preprocess con ratios de `imageProcessor.js` + port de `parser.js`: first-number, fix 6/9, O->0, Levenshtein vs plantel), `POST /api/matches/{id}/performances/analyze/` (hasta 30 imgs, concurrencia 2, imagenes descartadas), `PerformanceUploadModal` con verificacion humana. Requiere **Dockerfile + render.yaml migrado a Docker en Render Free** (paquetes `tesseract-ocr` + `tesseract-ocr-spa`); local: Tesseract via winget.
-3. **Fase 3** — Analitica: leaderboards AVG/SUM por metrica, evolucion por jugador, graficos (cache 600s).
+1. **Fase 1 ✅** (commit `1ab0e2f`) — Modelo `MatchPerformance` (OneToOne a `MatchPlayer`, 18 campos, valida no-BOT), `MatchPerformanceViewSet`, batch upsert con auto-create de `MatchPlayer` (validado contra `PlayerClubHistory`), historial por jugador, secciones en MatchDetail/PlayerProfile, tests.
+2. **Fase 2 ✅** (commit `6307d43`) — OCR: `apps/matches/services/ocr.py` (preprocess con ratios de `imageProcessor.js` + port de `parser.js`: first-number, fix 6/9, O->0, Levenshtein vs plantel), `POST /api/matches/{id}/performances/analyze/` (hasta 30 imgs, concurrencia 2, imagenes descartadas), bloque OCR con verificacion en MatchDetail. **Dockerfile + render.yaml migrados a Docker en Render Free** (paquetes `tesseract-ocr` + `tesseract-ocr-spa`); local: Tesseract via winget.
+3. **Fase 3 ⏳ (sin arrancar)** — Analitica: leaderboards AVG/SUM por metrica, evolucion por jugador, graficos (cache 600s).
 
-Garantias: Match/MatchPlayer/MatchEvent intactos (106 tests sin riesgo); MatchEvent sigue siendo autoridad para standings/rankings.
+**Pendiente (no arrancar hasta que el usuario lo pida):** (a) verificar el primer deploy Docker en Render, (b) probar OCR con capturas reales de FIFA y afinar recortes/keywords.
+
+Garantias: Match/MatchPlayer/MatchEvent intactos (139 tests sin riesgo); MatchEvent sigue siendo autoridad para standings/rankings; seed local `seed_performances` consistente con los MatchEvent reales.

@@ -34,7 +34,7 @@ Plataforma web para gestionar ligas competitivas de **EA Sports FC — Clubes Pr
 | 3. API REST | ✅ | ViewSets, serializers, URLs, auth endpoints |
 | 4. Frontend React | ✅ | 14 páginas, Matchday Broadcast theme, JWT auth, API client |
 | 5. Auth y Permisos | ✅ | 7 clases de permisos, role-based en todos los ViewSets |
-| 6. Tests | ✅ | 106 tests pasando en 6 archivos |
+| 6. Tests | ✅ | 139 tests pasando en 6 archivos |
 | 7. Frontend-Backend Integration | ✅ | CRUD, loading, error handling, role-based UI |
 | 8. Optimization | ✅ | DRF pagination, django-filter, cache, GZip, select_related/prefetch_related |
 | 9. Deployment | ✅ | Render (backend + PostgreSQL) + Cloudflare Pages (frontend) |
@@ -43,6 +43,9 @@ Plataforma web para gestionar ligas competitivas de **EA Sports FC — Clubes Pr
 | 12. Mercado de pases (v1) | ✅ | Modelo Transfer, API `/api/transfers/`, página Mercado con búsqueda y revert |
 | 13. Edición admin inline | ✅ | MatchDetail con CRUD + auto-recalc, edición de títulos/temporadas/jugadores/clubes |
 | 14. Rate limits | ✅ | Sin throttles globales; auth 10/min por IP; retry de 429 en frontend |
+| 15. Rendimiento Fase 1 | ✅ | `MatchPerformance` + API + historial (commit `1ab0e2f`) |
+| 16. Rendimiento Fase 2 | ✅ | OCR pytesseract + UI de capturas + Docker en Render (commit `6307d43`) — **deploy real pendiente de verificar** |
+| 17. Seed rendimiento + fixes | ✅ | `seed_performances` (34,800 filas), fix clubs fetch-all, credenciales documentadas |
 
 ---
 
@@ -230,7 +233,7 @@ authApi:          login, register, profile
 countriesApi:     list, get, create, update, delete
 leaguesApi:       list, get, create, update, delete
 seasonsApi:       list, get, create, update
-clubsApi:         list, get, create, update, delete
+clubsApi:         list (pagina hasta traer todos), get, create, update, delete
 clubTitlesApi:    list, create, delete
 playersApi:       list, get, create, update, delete
 transfersApi:     list, create, delete
@@ -240,6 +243,7 @@ matchEventsApi:   list, create, update, delete
 playerClubHistoryApi: list
 standingsApi:     list, recalculate
 statisticsApi:    player, playerHistory, topScorers, topAssists, topMvp
+matchPerformancesApi: list, saveBatch, forPlayer, update, delete, analyze (OCR)
 ```
 
 ### Role-based UI (hook `useCanEdit`)
@@ -276,13 +280,13 @@ cd backend
 python manage.py test
 ```
 
-### Resumen de tests (106 total)
+### Resumen de tests (139 total)
 
 | Archivo | Tests | Qué cubre |
 |---------|-------|-----------|
 | `apps/players/tests.py` | 20 | Creación, nicknames, historial, clubes, mercado de pases (Transfer API) |
 | `apps/clubs/tests.py` | 11 | Clubs, club-season, títulos (CRUD API), validación única |
-| `apps/matches/tests.py` | 18 | Partidos, alineaciones, BOT, eventos, permisos, auto-recalc de posiciones |
+| `apps/matches/tests.py` | 51 | Partidos, alineaciones, BOT, eventos, permisos, auto-recalc + MatchPerformance (modelo/batch/historial) + endpoint OCR (parser, preprocessing, perms con pytesseract mockeado) |
 | `apps/standings/tests.py` | 16 | Victoria=3pts, empate, diferencia, posiciones, zonas por división |
 | `apps/statistics/tests.py` | 12 | Goals, assists, own goals, cards, MVP, rankings |
 | `apps/accounts/tests.py` | 29 | Login, register, profile, permisos por rol en todos los endpoints |
@@ -292,9 +296,22 @@ python manage.py test
 
 ---
 
+## Credenciales de desarrollo (local)
+
+Base local `ea_fc_platform` (creadas por `seed_data`, mismo password para todas):
+
+| Usuario | Rol | Password |
+|---------|-----|----------|
+| `admin` | SUPERADMIN + superuser de `/admin/` | `admin123` |
+| `admin_liga` | ADMIN_LIGA | `admin123` |
+| `admin_club` | ADMIN_CLUB | `admin123` |
+| `player1` | PLAYER | `admin123` |
+
+---
+
 ## Datos de prueba (seed data)
 
-Dos scripts de seed disponibles:
+Tres scripts de seed disponibles:
 
 ### seed_data.py — Dataset completo (~34,000 registros)
 
@@ -331,6 +348,19 @@ python manage.py seed_dev
 - 10 clubs, 60 players
 - S1 FINISHED + S2 UPCOMING
 - ~370 eventos
+
+### seed_performances — Rendimiento por jugador y partido
+
+```bash
+python manage.py seed_performances            # completa solo las apariciones sin performance
+python manage.py seed_performances --reset    # borra todo y regenera
+python manage.py seed_performances --seed 7   # otra semilla (default 42)
+```
+
+- Crea `MatchPerformance` para todas las apariciones de partidos FINISHED (~34,800 filas)
+- **goals/assists derivados de los `MatchEvent` reales** (consistente con rankings de goleadores/asistencias)
+- El resto de las 18 stats es realista por posición (ARQ/DEF/MED/DEL), rating correlacionado con rendimiento
+- Idempotente: solo rellena filas faltantes; determinista: el RNG se siembra con `--seed` + id de la aparición
 
 ---
 
@@ -414,7 +444,7 @@ GET /api/health/ → {"status": "ok", "db": "ok"}
 
 Ver `PROXIMOS_CAMBIOS.md` para detalles completos:
 
-1. **Estadísticas detalladas por partido (rendimiento)** — **PLAN APROBADO** (PROXIMOS_CAMBIOS.md #4): modelo `MatchPerformance` (18 campos por jugador por partido), carga manual + OCR (`pytesseract` + Pillow, port del parser de FIFASTATS), migración del backend a Docker en Render Free, imágenes descartadas tras verificar, solo ADMIN_LIGA escribe. Orden: Fase 1 (modelo/API/historial) → Fase 2 (OCR + Docker) → Fase 3 (analítica/gráficos)
+1. **Estadísticas detalladas por partido (rendimiento)** — **Fase 1 ✅ (`1ab0e2f`) y Fase 2 ✅ (`6307d43`)**: modelo `MatchPerformance` (18 campos por jugador por partido), carga manual + OCR (`pytesseract` + Pillow, port de FIFASTATS), Docker en Render (`Dockerfile` + `render.yaml runtime: docker`), imágenes descartadas tras verificar, solo ADMIN_LIGA escribe. **Pendiente (no arrancar hasta que el usuario lo pida): (a) verificar el primer deploy Docker en Render, (b) probar OCR con capturas reales de FIFA.** Sigue Fase 3 (analítica/gráficos)
 2. **Mercado de pases (v2)** — ventana de pases, free agents, invitaciones con expiración (v1 de registro admin ya está)
 3. **Brasil** — Agregar como tercer país
 4. **Reducido/Promoción** — generar las llaves del Reducido y la Promoción como partidos (formato por definir)
@@ -430,7 +460,7 @@ cd backend
 python manage.py test --verbosity=2
 ```
 
-106 tests en 6 archivos, todos pasando.
+139 tests en 6 archivos, todos pasando.
 
 ### Frontend (Playwright)
 

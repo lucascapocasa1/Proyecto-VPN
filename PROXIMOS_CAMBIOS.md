@@ -88,7 +88,7 @@ Nota: desde la Fase 11, S2 esta ACTIVE con fixtures: +22 matchdays (11 por divis
 
 ### Estado
 
-✅ Implementado y verificado (106 tests pasando, E2E Playwright OK)
+✅ Implementado y verificado (139 tests pasando, E2E Playwright OK)
 
 **S2 ahora está ACTIVE** (no UPCOMING): 11 matchdays por división (J1-J10 FINISHED, J11 SCHEDULED), con transiciones S1→S2 aplicadas y fixtures regenerados. Comandos idempotentes: `seed_data`, `seed_s2`, `fix_season_transitions`.
 
@@ -190,16 +190,16 @@ Esto es **ademas** de la Opcion A actual (resultados/alineaciones/eventos), que 
 | Competencia | `MatchEvent` + resultado siguen siendo autoridad para standings y rankings actuales; `MatchPerformance` es solo analitica (si los goles de la captura difieren, se guardan ambos) |
 | Volumen | ~11 filas x 18 campos por partido cargado; S1 completa (~760 partidos) = ~8.400 filas, unos pocos MB en Postgres (no es problema de escala; lo pesado serian las capturas, que se descartan) |
 
-### Fase 1 — Modelo, API e historial (sin OCR, sin tocar deploy)
+### ✅ Fase 1 — Modelo, API e historial (sin OCR, sin tocar deploy) — commit `1ab0e2f`
 
 - `apps/matches/models.py`: `MatchPerformance` — `match_player = OneToOne(MatchPlayer)` + 18 campos (`rating Decimal(3,1)` 0-10; porcentajes enteros 0-100; km `Decimal(4,1)`; conteos enteros) + `clean()` que exige `match_player.player` distinto de `None` (BOT no tiene rendimiento). Migracion nueva.
 - `MatchPerformanceViewSet`: `filterset_fields=["match","match_player"]`, lectura publica, escritura `IsAdminLiga`, `perform_* -> cache.clear()`.
 - `POST /api/matches/{id}/performances/batch/`: upsert por jugador; si no existe `MatchPlayer`, lo crea (`is_starter=True`, `display_name=nickname`) validando via `PlayerClubHistory` que el jugador tenga stint en el club_season local o visitante; jugador ajeno al partido -> 400.
 - `GET /api/players/{id}/performances/`: historial con contexto de partido (fecha, rival, resultado + los 18 campos), filtros opcionales season/division.
-- Frontend: seccion "Rendimiento detallado" en MatchDetail (tabla con los 18 inputs + Guardar todo) y seccion "Partidos y rendimiento" en PlayerProfile (lista de participaciones, expand para detalle; fallback "sin datos" para partidos legacy).
+- Frontend: seccion "Rendimiento detallado" en MatchDetail (una fila por jugador con rating/minutos/resumen; expand para editar los 18 campos, guardar por fila) y seccion "Partidos y rendimiento" en PlayerProfile (historial con rating, fallback "sin datos" para partidos legacy).
 - Tests: validaciones de modelo, batch (upsert/auto-create/jugador ajeno), permisos, historial.
 
-### Fase 2 — OCR (pytesseract + Docker)
+### ✅ Fase 2 — OCR (pytesseract + Docker) — commit `6307d43`
 
 - `requirements.txt`: + `pytesseract` (Pillow ya esta).
 - **Dockerfile** en la raiz (`python:3.12-slim` + `apt-get install tesseract-ocr tesseract-ocr-spa` + pip + collectstatic) y **`render.yaml` migrado a Docker** (preservando migrate, envVars y la DB `ea-fc-db`; plan Free igual, $0). Local: instalar Tesseract + spa (winget UB-Mannheim.TesseractOCR) y documentarlo.
@@ -208,8 +208,8 @@ Esto es **ademas** de la Opcion A actual (resultados/alineaciones/eventos), que 
   - `ocr()` con lang `spa` + config/whitelist de `ocr.js`
   - Port de `parser.js`: keywords -> campo (siempre el primer numero de la linea), fix rating 6<->9 (espejo), O->0, coma->punto, Levenshtein contra el plantel del partido
   - Concurrencia 2 (como el worker pool de FIFASTATS)
-- `POST /api/matches/{id}/performances/analyze/`: multipart, hasta 30 archivos, devuelve `[{index, detected_name, suggested_player_id, stats, warnings}]`, **no persiste imagenes**.
-- Frontend: `PerformanceUploadModal` en MatchDetail — dropzone multi-captura (objectURL local), fichas de revision (preview, jugador sugerido en select del plantel, 18 inputs prellenados, warnings resaltados) -> "Guardar todo" -> batch.
+- `POST /api/matches/{id}/performances/analyze/`: multipart (campo `images`), hasta 30 archivos, devuelve `{total, exitosos, fallidos, results: [{filename, detected_name, player, stats, warnings, errors, ocr_debug}]}`, **no persiste imagenes**.
+- Frontend: bloque "OCR upload" en MatchDetail — select de capturas (max 30), "Analizar" -> fichas por resultado con jugador sugerido (select del plantel; "Editar" rellena el form manual) -> "Guardar" via batch. Smoke local con imagen sintetica OK (nombre, rating, goles, pases, minutos, distancia).
 - Tests: parser con textos OCR fijos, preprocessing con imagen Pillow generada, endpoint con `pytesseract` mockeado (sin binario en CI), permisos.
 - Al arrancar la fase: re-fetchear `parser.js`, `ocr.js`, `imageProcessor.js`, `routes.js` del repo FIFASTATS para portar al detalle exacto.
 
@@ -221,7 +221,7 @@ Esto es **ademas** de la Opcion A actual (resultados/alineaciones/eventos), que 
 
 ### Garantias
 
-- **Competicion intacta**: standings/rankings actuales salen de MatchEvent + resultado; una migracion nueva y cero cambios en modelos viejos (los 106 tests siguen pasando).
+- **Competicion intacta**: standings/rankings actuales salen de MatchEvent + resultado; una migracion nueva y cero cambios en modelos viejos (los 139 tests siguen pasando).
 - Partidos seed/legacy sin capturas -> sin fila de performance (fallback en UI, jamas rellenar con ceros).
 - BOT (`MatchPlayer.player=NULL`) no puede tener performance (validado en el modelo).
 
@@ -236,7 +236,16 @@ Esto es **ademas** de la Opcion A actual (resultados/alineaciones/eventos), que 
 
 ### Estado
 
-📋 **Plan aprobado** (decisiones cerradas: modelo, campos, OCR pytesseract+Docker en Render Free, imagenes descartadas, solo ADMIN_LIGA). Orden de implementacion: **Fase 1 -> Fase 2 -> Fase 3**. Pendiente de arranque.
+✅ **Fase 1 implementada** (commit `1ab0e2f`): modelo `MatchPerformance` + migracion, ViewSet/filtros, batch upsert con auto-create, historial publico, secciones MatchDetail/PlayerProfile, tests.
+✅ **Fase 2 implementada** (commit `6307d43`): `apps/matches/services/ocr.py` (port completo de FIFASTATS), endpoint `analyze`, bloque OCR con verificacion humana en MatchDetail, `Dockerfile` + `render.yaml` (`runtime: docker`, `preDeployCommand: migrate`), `pytesseract` en requirements; smoke OCR con imagen sintetica OK.
+
+**Pendiente (no arrancar hasta que el usuario lo pida):**
+
+1. **Verificar el primer deploy Docker en Render** — build de la imagen, migrate automatico, smoke de `/api/health/`; el codigo esta, el deploy real no se probo.
+2. **Probar OCR con capturas reales de FIFA** — afinar recortes/keywords si hace falta.
+3. **Fase 3 (analitica)** — leaderboards AVG/SUM, evolucion por jugador, graficos (plan arriba).
+
+Seed local de desarrollo: `python manage.py seed_performances` crea ~34,800 filas (goals/assists derivados de MatchEvent reales, RNG determinista `--seed`, idempotente, `--reset`).
 
 ### Archivos ya existentes que se usan (Opcion A — sin cambios)
 

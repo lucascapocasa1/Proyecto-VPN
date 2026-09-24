@@ -40,7 +40,7 @@ Plataforma web para gestionar ligas competitivas de **EA Sports FC — Clubes Pr
 ### Jugadores (`/players`)
 - Lista de todos los jugadores
 - Busqueda por nickname
-- Click en un jugador para ver estadisticas e historial
+- Click en un jugador para ver estadisticas, historial y rendimiento partido a partido (rating, minutos, goles, asistencias)
 - Los ADMIN_LIGA+ pueden editar nickname, posicion, plataforma, pais y estado desde el perfil
 
 ### Partidos (`/matches`)
@@ -53,6 +53,8 @@ Plataforma web para gestionar ligas competitivas de **EA Sports FC — Clubes Pr
 - Editar resultado/estado/fecha/hora (ADMIN_LIGA+) — las posiciones se recalculan automaticamente
 - Alineaciones: agregar jugadores del club y quitarlos (con confirmacion)
 - Eventos: goles, asistencias, autogoles, tarjetas y MVP — alta, edicion inline y baja
+- Rendimiento detallado: rating, minutos y las 18 stats por jugador; fila expandible para editar y guardar (ADMIN_LIGA+)
+- OCR: seleccionar capturas de la pestaña "Rendimiento" de EA FC → Analizar → verificar/corregir el jugador sugerido → Guardar (ADMIN_LIGA+)
 
 ### Mercado de Pases (`/transfers`)
 - Lista de transferencias registradas con club de origen y destino

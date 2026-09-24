@@ -107,7 +107,7 @@ ea-fc-platform/
 
 ### Fase 6 — Tests
 
-- **106 tests**, todos pasando
+- **139 tests**, todos pasando
 - **6 archivos de tests**:
   - `apps/players/tests.py` (20 tests): creación, nicknames, historial, mercado de pases
   - `apps/clubs/tests.py` (11 tests): clubs, club-season, títulos (CRUD API)
@@ -217,6 +217,20 @@ python manage.py test
 - **Retry en frontend**: el axios client reintenta 1 vez las respuestas 429 esperando `Retry-After`
 - Verificado: 150 GETs anónimos → 150×200; 12 logins → 10×200 + 2×429
 
+### Fase 15 — Rendimiento por partido (MatchPerformance + OCR + Docker)
+
+- **Modelo `MatchPerformance`** (OneToOne a `MatchPlayer`): rating + 18 campos por jugador por partido; el modelo rechaza BOT (`player=NULL`); no toca Match/MatchPlayer/MatchEvent
+- **API**: `GET/POST /api/match-performances/`, `POST /api/matches/{id}/performances/batch/` (upsert con auto-create validado contra `PlayerClubHistory`), `GET /api/players/{id}/performances/` (historial público); escritura solo ADMIN_LIGA
+- **OCR**: `POST /api/matches/{id}/performances/analyze/` — pytesseract + Pillow, port de FIFASTATS (recortes de paneles, binarizado, `spa`+fallback `eng`, fix rating 6↔9 y O→0, Levenshtein vs plantel real, concurrencia 2, ≤30 imgs ≤20MB); imágenes descartadas tras analizar
+- **Docker en Render**: `Dockerfile` raíz (`python:3.12-slim` + `tesseract-ocr` + `tesseract-ocr-spa`), `render.yaml` con `runtime: docker` y `preDeployCommand: python manage.py migrate`; local: Tesseract vía `winget UB-Mannheim.TesseractOCR`
+- **UI**: "Rendimiento detallado" en MatchDetail (fila por jugador, expand para editar los 18 campos) + bloque OCR (seleccionar capturas → Analizar → verificar jugador sugerido → Guardar); "Partidos y rendimiento" en PlayerProfile
+
+### Fase 16 — Seed de rendimiento + fixes
+
+- **`seed_performances`**: ~34,800 rendimientos generados; goals/assists derivados de los `MatchEvent` reales (consistente con rankings), stats restantes realistas por posición; idempotente, determinista (`--seed`, default 42), `--reset` para regenerar
+- **Clubes**: `clubsApi.list` pagina hasta traer todos los clubs (antes se cortaba en la página de 25/20 del backend); el hero de Home ahora dice "Equipos en liga" (40 = filas de la tabla de la temporada destacada, semántica correcta)
+- **Credenciales de desarrollo** documentadas en `PROJECT_CONTEXT.md` (4 usuarios, todos `admin123`)
+
 ---
 
 ## Modelo de datos
@@ -224,7 +238,7 @@ python manage.py test
 ### Jerarquía de competiciones
 
 ```
-Country → League → Season → Division → ClubSeason → Match → MatchPlayer → MatchEvent
+Country → League → Season → Division → ClubSeason → Match → MatchPlayer → MatchEvent / MatchPerformance
             ↑
            Game
 ```
@@ -250,6 +264,7 @@ Country → League → Season → Division → ClubSeason → Match → MatchPla
 | `Match` | Partido entre dos clubes |
 | `MatchPlayer` | Jugador que participó en un partido |
 | `MatchEvent` | Evento durante un partido (gol, asistencia, tarjeta, etc.) |
+| `MatchPerformance` | Rendimiento detallado por jugador por partido (rating + 18 stats; analítica, no afecta standings) |
 | `Standing` | Posición en la tabla (dato derivado) |
 | `User` | Usuario de la plataforma con rol |
 | `LeagueAdmin` | Administrador asignado a una liga |
@@ -330,6 +345,8 @@ GET /api/statistics/top_assists/?season_id=1&division_id=1&limit=10
 GET /api/statistics/top_mvp/?season_id=1&division_id=1&limit=10
 GET /api/statistics/player/?player_id=1&season_id=1
 GET /api/statistics/player_history/?player_id=1
+GET /api/match-performances/?match=1&match_player=2
+GET /api/players/1/performances/?season_id=1
 ```
 
 ### Endpoints administrativos
@@ -342,6 +359,9 @@ GET/POST/PUT/PATCH/DELETE /api/match-events/
 GET/POST/PUT/PATCH/DELETE /api/match-players/
 GET/POST/PUT/PATCH/DELETE /api/club-titles/
 GET/POST/PUT/PATCH/DELETE /api/transfers/
+GET/POST/PUT/PATCH/DELETE /api/match-performances/
+POST /api/matches/{id}/performances/batch/     # upsert rendimiento por jugador
+POST /api/matches/{id}/performances/analyze/   # OCR multipart "images", ≤30 (no persiste)
 PATCH /api/seasons/{id}/            # actualizar temporada (estado, nombre)
 POST /api/standings/recalculate/   {"season_id": 1, "division_id": 1}
 ```
@@ -358,6 +378,7 @@ python manage.py seed_data        # Dataset completo (~34K registros, 2 países,
 python manage.py seed_dev         # Dataset chico (~1.2K registros, 1 país)
 python manage.py seed_s2          # Upgrade idempotente de un seed viejo a S2 ACTIVE
 python manage.py fix_season_transitions  # Zonas, títulos S1, transiciones S1→S2, regenera S2
+python manage.py seed_performances       # Rendimientos por jugador/partido (idempotente, --reset, --seed)
 python manage.py flush            # Limpiar base de datos
 ```
 
@@ -371,6 +392,7 @@ cd backend
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py seed_data        # O seed_dev para desarrollo rápido
+python manage.py seed_performances  # Opcional: rendimiento por jugador/partido
 python manage.py createsuperuser
 python manage.py runserver
 
@@ -429,6 +451,7 @@ npm run dev
 11. **Edición inline por página**: no hay panel admin central; cada página (partido, club, jugador, temporada) expone sus controles de edición según `useCanEdit`
 12. **Recálculo automático de posiciones**: toda mutación de Match/MatchPlayer/MatchEvent dispara `_refresh_derived` → `recalculate_standings` + `cache.clear()`
 13. **Rate limit solo en auth**: sin throttles globales; `login/register/refresh` limitados a 10/min por IP; el frontend reintenta 429 una vez
+14. **Rendimiento por partido**: `MatchPerformance` (19 stats) + carga manual y por OCR (pytesseract, port de FIFASTATS) + seed local consistente con los MatchEvent
 
 ---
 
@@ -436,7 +459,7 @@ npm run dev
 
 Ver `PROXIMOS_CAMBIOS.md` para el plan detallado:
 
-- **Estadísticas detalladas por partido** — **Plan aprobado** (PROXIMOS_CAMBIOS.md #4): modelo `MatchPerformance` (18 campos por jugador por partido), OCR con `pytesseract` + Pillow (port del parser de FIFASTATS) y verificación humana antes de guardar, con migración del backend a Docker en Render Free. Fases: 1) modelo/API/historial → 2) OCR + Docker → 3) analítica/gráficos
+- **Estadísticas detalladas por partido** — **Fase 1 ✅ (`1ab0e2f`) y Fase 2 ✅ (`6307d43`) implementadas** (PROXIMOS_CAMBIOS.md #4): modelo `MatchPerformance`, OCR con `pytesseract` + Pillow (port de FIFASTATS) con verificación humana antes de guardar, backend con Docker en Render. **Pendiente: verificar el primer deploy en Render y probar OCR con capturas reales; Fase 3 (analítica/gráficos) sin arrancar**
 - **Mercado de pases v2** — Free agents, invitaciones a clubes, ventana de pases controlada por admin (v1 de registro manual ya implementada)
 - **Reducido/Promoción** — Generar las llaves del Reducido y la Promoción como partidos
 - **Brasil** — Tercer país con la misma estructura de ligas

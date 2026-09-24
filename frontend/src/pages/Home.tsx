@@ -117,7 +117,7 @@ export default function Home() {
           <div className="home-hero-stats">
             <div className="home-hero-stat">
               <div className="home-hero-stat-value">{standings.length}</div>
-              <div className="home-hero-stat-label">Clubes</div>
+              <div className="home-hero-stat-label">Equipos en liga</div>
             </div>
             <div className="home-hero-stat">
               <div className="home-hero-stat-value">

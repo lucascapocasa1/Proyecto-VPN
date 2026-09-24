@@ -70,7 +70,21 @@ export const divisionsApi = {
 
 // Clubs
 export const clubsApi = {
-  list: () => api.get<PaginatedResponse<Club>>("/clubs/"),
+  list: async (params?: { page_size?: number }) => {
+    const all: Club[] = [];
+    let page = 1;
+    for (;;) {
+      const res = await api.get<PaginatedResponse<Club>>("/clubs/", {
+        params: { page_size: 100, page, ...params },
+      });
+      all.push(...(res.data.results || []));
+      if (!res.data.next || all.length >= res.data.count || page > 50) break;
+      page += 1;
+    }
+    return {
+      data: { count: all.length, next: null, previous: null, results: all },
+    };
+  },
   get: (id: number) => api.get<ClubDetail>(`/clubs/${id}/`),
   create: (data: { name: string; short_name: string; country: number }) =>
     api.post<Club>("/clubs/", data),
